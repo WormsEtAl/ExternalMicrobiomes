@@ -1,0 +1,2713 @@
+External Microbiome Project Code
+################  16s Metabarcoding Pipeline in Qiime ################
+##go to directory 
+cd Summer21/AGM_Dadaforwardtrim_primers_01
+
+#activate qiime
+source activate qiime2-2019.7
+
+#import into qiime
+qiime tools import --type 'SampleData[SequencesWithQuality]' --input-path /home/uflJPM/jparrufl/Spring21/P16onlyf --input-format CasavaOneEightSingleLanePerSampleDirFmt --output-path demux01.qza
+
+
+
+qiime demux summarize --i-data demux01.qza --o-visualization demux01.qzv
+
+#download in other termial window
+scp jparrufl@ron.sr.unh.edu:Summer21/AGM_Dadaforwardtrim_primers_01/demux01.qzv ./
+  
+  
+  #trim primer
+  qiime cutadapt trim-single --i-demultiplexed-sequences demux01.qza --p-cores 12 --p-adapter GTGYCAGCMGCCGCGGTAA --o-trimmed-sequences trimmed-seqs.qza --verbose
+
+#confirm that they tirmmed
+qiime demux summarize --i-data trimmed-seqs.qza --o-visualization trimmed-seqs.qzv
+
+scp jparrufl@ron.sr.unh.edu:Summer21/AGM_Dadaforwardtrim_primers_01/trimmed-seqs.qzv ./
+  
+  #second try
+  qiime cutadapt trim-single --i-demultiplexed-sequences deomux01.qza --p-cores 12 --p-adapter ATTAGAWACCCBDGTAGTCC --p-front GTGCCAGCMGCCGCGGTAA  --o-trimmed-sequences trimmed-seqs2.qza --verbose
+
+qiime demux summarize --i-data trimmed-seqs2.qza --o-visualization trimmed-seqs2.qzv
+scp jparrufl@ron.sr.unh.edu:Summer21/AGM_Dadaforwardtrim_primers_01/trimmed-seqs2.qzv ./
+  
+  nohup qiime dada2 denoise-single --i-demultiplexed-seqs trimmed-seqs2.qza --output-dir otu-dada2 --p-trim-left 0 --p-trunc-len 196 --p-n-threads 0 &
+  
+  qiime metadata tabulate --m-input-file otu-dada2/denoising_stats.qza --o-visualization stats
+scp jparrufl@ron.sr.unh.edu:Summer21/AGM_Dadaforwardtrim_primers_01/stats.qzv ./
+  
+  
+  qiime feature-table tabulate-seqs --i-data otu-dada2/representative_sequences.qza --o-visualization rep-seqs
+
+
+
+qiime feature-table summarize --i-table otu-dada2/table.qza --m-sample-metadata-file /home/uflJPM/jparrufl/Spring21/All_97paired/Mappingall16s.txt   --o-visualization tableFT
+
+
+qiime tools export --input-path otu-dada2/table.qza --output-path exported-feature-table
+
+cd exported-feature-table
+
+#convert to excel
+biom convert -i feature-table.biom -o ExportTable.tsv --to-tsv
+
+cd.. 
+
+#this gets you the dna-seq .fasta
+qiime tools export --input-path otu-dada2/representative_sequences.qza --output-path otu-dada2
+
+
+cd otu-dada2
+source activate qiime1
+export BLASTMAT=$HOME/Software/blast-2.2.22/data
+
+nohup assign_taxonomy.py -i dna-sequences.fasta -r /home/genome/egendron/Projects/v138/uclust_stable/formatted_v138_again.fasta -t /home/genome/egendron/Projects/v138/uclust_stable/taxonomy_id_map.txt -o v138_uclust &
+  
+  
+  
+  scp jparrufl@ron.sr.unh.edu:Summer21/AGM_Dadaforwardtrim_primers_01/exported-feature-table/ExportTable.tsv -otutable.txt
+scp jparrufl@ron.sr.unh.edu:Summer21/AGM_Dadaforwardtrim_primers_01/otu-dada2/v138_uclust/dna-sequences_tax_assignments.txt -taxstringfal.txt
+
+
+### new unassigned taxa
+cd otu-dada2
+source activate qiime1
+export BLASTMAT=$HOME/Software/blast-2.2.22/data
+
+nohup assign_taxonomy.py -i dna-sequences.fasta -r /home/genome/egendron/Projects/v138/uclust_stable/no-uncultured_ids.list_formatted_v138_again.fasta -t /home/genome/egendron/Projects/v138/uclust_stable/taxonomy_id_map.txt -o nounassigned &
+
+
+################  18s Metabarcoding Pipeline in Qiime ################
+
+
+18swithnewplate3andnewplate4withprimers
+source activate qiime2-2021.8
+
+qiime tools import --type 'SampleData[PairedEndSequencesWithQuality]' --input-path /home/uflJPM/jparrufl/Summer21/NewPlate3Reads --input-format CasavaOneEightSingleLanePerSampleDirFmt --output-path demux01.qza
+
+
+change the tmp file and cut adapt stufff
+
+qiime demux summarize --i-data demux01.qza --o-visualization demux01.qzv
+qiime demux summarize --i-data 18strimmedk2.qza --o-visualization 18strimmedk2.qzv
+
+
+
+nohup qiime dada2 denoise-paired --i-demultiplexed-seqs 18strimmedk2.qza  --output-dir otu-dada7 --p-trim-left-f 0 --p-trim-left-r 0 --p-trunc-len-f 125 --p-trunc-len-r 125 --p-n-threads 0 &
+
+
+#10/26/21 no envo update to actually aling blast stats
+source activate qiime2-2021.8
+cd Summer21/18swithnewplate3andnewplate4withprimers/otu-dada4/otu-dada4
+
+
+#10/26/21 no envo update to actually aling blast stats
+/home/genome/egendron/Projects/v138/no_env_seqs/seqs_noenv.fasta
+/home/genome/egendron/Projects/v138/no_env_seqs/Silva_111_taxa_map_full_no_environmental.txt
+
+#10/26/21 no envo update to actually aling blast stats
+nohup blastn -query /home/uflJPM/jparrufl/Summer21/18swithnewplate3andnewplate4withprimers/otu-dada4/otu-dada4/dna-sequences.fasta -subject /home/genome/egendron/Projects/v138/no_env_seqs/seqs_noenv.fasta -out blastn_resultsotu4LIdatabasenoenvo.txt -max_target_seqs 1 -outfmt "6 qseqid sseqid qlen slen pident qcovs mismatch length gaps qstart qend sstart send bitscore evalue staxids" &
+
+#for otudada6 and 7 in place
+nohup blastn -query dna-sequences.fasta -subject /home/genome/egendron/Projects/v138/no_env_seqs/seqs_noenv.fasta -out blastn_resultsotu4LIdatabasenoenvo.txt -max_target_seqs 1 -outfmt "6 qseqid sseqid qlen slen pident qcovs mismatch length gaps qstart qend sstart send bitscore evalue staxids" &
+
+
+
+11/30/21 for otudada7 final pipeline now with excluding uncultured in addtion to enviro for final taxnomy assign to tables after spliting
+do this in place
+nohup blastn -query dna-sequences.fasta -subject /home/genome/egendron/Projects/v138/no_env_no_uncult_seqs/seqs_noenv_nouncult.fasta -out blastn_resultsotu4LIdatabasenoenvoANDNOcuncluted.txt -max_target_seqs 1 -outfmt "6 qseqid sseqid qlen slen pident qcovs mismatch length gaps qstart qend sstart send bitscore evalue staxids" &
+
+
+nohup blastn -query dna-sequences.fasta -subject /home/genome/egendron/Projects/v138/no_env_no_uncult_seqs/seqs_noenv_nouncult_edit1.fasta -out blastn_resultsotu4LIdatabasenoenvoANDNOcunclutededit1.txt -max_target_seqs 1 -outfmt "6 qseqid sseqid qlen slen pident qcovs mismatch length gaps qstart qend sstart send bitscore evalue staxids" &
+
+
+################  Load all R libraries ################
+library("ggplot2")
+library("vegan")
+library("DataCombine")
+library("randomcoloR")
+library("forcats")
+library("data.table")
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+library("phyloseq")
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(emmeans)
+library(car)
+library(glmmTMB)
+library(RVAideMemoire)
+library(DHARMa)
+library(ggpubr)
+library(ggpubr)
+library(indicspecies)
+library(ape)
+library(ggsignif)
+
+################### Create 18s table ##########
+
+setwd("~/Desktop/125 dada 18s figure out/Post split/New taxnomy no uncultured")
+
+
+RawOtu <- read.table("otu.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+RawOtu <- RawOtu[,order(colnames(RawOtu))]
+#taxnomy strings
+taxmat <- read.table("tax.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+
+#mapping file 
+mapping <- read.table("mapall18withrerun.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+
+#Add tree now
+filename <- "treewithotusremoved.nwk"
+#filename <- "18stree.nwk"
+rootedtree <- ape::read.tree(filename)
+#confirm rooted
+is.rooted(rootedtree)
+
+
+##Import into phyloseq
+#otu table
+onlyOTU <- as.matrix(RawOtu)
+otu_sub  <- otu_table(onlyOTU, taxa_are_rows = T)
+#taxnomy strings
+t_tax <- as.matrix(taxmat)
+tax_sub = tax_table(t_tax)
+#mapping file
+metadata <- sample_data(mapping)
+
+##Create phyloseq object, the tree does not work with the !=command
+PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub)
+
+
+
+#Remove negative samples (zeroed out already)
+PhRemoveNeg <- subset_samples(PhUnmodifed, Animal != "Neg")
+#Remove the few nematodes from soil and not mats
+
+
+PhRemoveNegSoil <- subset_samples(PhRemoveNeg, Substrate == "mat")
+
+PhRemoveNegSoil
+
+onlyE <- subset_samples(PhRemoveNegSoil, Animal=="Eudorylaimus")
+onlyE <- subset_taxa(onlyE,f!=" __Qudsianematidae")
+onlyP <- subset_samples(PhRemoveNegSoil, Animal=="Plectus")
+onlyP <- subset_taxa(onlyP,f!=" __Plectidae")
+onlyT <- subset_samples(PhRemoveNegSoil, Animal=="Tardigrade")
+onlyT <- subset_taxa(onlyT, d!=" __Tardigrada")
+onlyM <- subset_samples(PhRemoveNegSoil, Animal=="Mat")
+
+
+PhOnlyBac <- merge_phyloseq(onlyT, onlyP, onlyE,onlyM)
+
+PhNotEud <- subset_samples(PhOnlyBac, Animal != "Eudorylaimus")
+PhNotEud <-prune_samples(sample_sums(PhNotEud)>=100, PhNotEud)
+PhOnlyEud <- subset_samples(PhOnlyBac, Animal == "Eudorylaimus")
+PhOnlyEud <-prune_samples(sample_sums(PhOnlyEud)>=100, PhOnlyEud)
+PhMerge <- merge_phyloseq(PhNotEud,PhOnlyEud)
+PhMerge = subset_samples(PhMerge, SampleID != "E_18s_068")
+
+#OTU1 = as(otu_table(PhMerge), "matrix")
+
+#write.csv(OTU1,'forlabmeeting2.csv')
+
+
+
+
+merge_samples_mean <- function(physeq, group){
+  
+  #Calculate the number of samples in each group
+  group_sums <- as.matrix(table(sample_data(physeq)[ ,group]))[,1]
+  
+  #Merge samples by summing
+  merged <- merge_samples(physeq, group)
+  
+  #Divide summed OTU counts by number of samples in each group to get mean
+  #Calculation is done while taxa are columns, but then transposed at the end
+  x <- as.matrix(otu_table(merged))
+  if(taxa_are_rows(merged)){ x<-t(x) }
+  out <- t(x/group_sums)
+  
+  #Return new phyloseq object with taxa as rows
+  out <- otu_table(out, taxa_are_rows = TRUE)
+  otu_table(merged) <- out
+  return(merged)
+}
+
+
+PhMergebyanimal <- merge_samples_mean(PhMerge,"TypebyReplicate")
+OTU1 = as(otu_table(PhMergebyanimal), "matrix")
+
+
+write.csv(OTU1,'18byreplicatemakeexternal.csv')
+
+#assign metadata in excel with vlookup
+
+######  Create 16s table ######
+
+setwd("~/Desktop/FinalPipelineNoUnassigned")
+
+
+##Import into R
+#otu table
+RawOtu <- read.table("otu.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+RawOtu <- RawOtu[,order(colnames(RawOtu))]
+#taxnomy strings
+taxmat <- read.table("tax.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+#mapping file 
+mapping <- read.table("mapingfile.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+##Import into phyloseq
+#otu table
+onlyOTU <- as.matrix(RawOtu)
+otu_sub  <- otu_table(onlyOTU, taxa_are_rows = T)
+#taxnomy strings
+t_tax <- as.matrix(taxmat)
+tax_sub = tax_table(t_tax)
+#mapping file
+metadata <- sample_data(mapping)
+
+##Create phyloseq object
+PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub)
+#Remove negative samples (zeroed out already)
+PhRemoveNeg <- subset_samples(PhUnmodifed, Animal != "Neg")
+#Remove the few nematodes from soil and not mats
+PhRemoveNegSoil <- subset_samples(PhRemoveNeg, Substrate == "mat")
+#Remove non bacteral reads
+PhOnlyBac <- subset_taxa(PhRemoveNegSoil, Domain=="Bacteria")
+
+#filter out low read count samples
+PhNotEud <- subset_samples(PhOnlyBac, Animal != "Eudorylaimus")
+PhNotEud <-prune_samples(sample_sums(PhNotEud)>=10, PhNotEud)
+PhOnlyEud <- subset_samples(PhOnlyBac, Animal == "Eudorylaimus")
+PhOnlyEud <-prune_samples(sample_sums(PhOnlyEud)>=10, PhOnlyEud)
+PhMerge <- merge_phyloseq(PhNotEud,PhOnlyEud)
+
+
+PhMerge <- merge_samples_mean(PhMerge,"TypebyReplicate")
+
+OTU1 = as(otu_table(PhMerge), "matrix")
+
+
+#write.csv(OTU1,'16byreplicatemakeexternalagain.csv')
+
+#write.csv(OTU1,'16byreplicatemakeexternalagainNOAVG.csv')
+
+RELPhOnlyClean10 <- merge_phyloseq(PhNotEud,PhOnlyEud)
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_064")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_041")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_130")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_114")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_092")
+
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_050")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_052")
+
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_054")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_129")
+
+PhOnlyEud <- subset_samples(PhOnlyEud, Animal == "Eudorylaimus")
+
+ 
+RELPhOnlyClean10 <- merge_samples_mean(RELPhOnlyClean10,"TypebyReplicate")
+OTU12 = as(otu_table(RELPhOnlyClean10), "matrix")
+write.csv(OTU12,'16byreplicatemakeexternalagainPOSTNMDSWIRemove9.csv')
+
+#assign metadata in excel with vlookup
+
+
+####################Import new R16s table by phyla###########
+setwd("~/Desktop/ExternalMicrobiome/New16s made in R")
+
+
+##Import into R
+#otu table
+RawOtu <- read.table("16byanimal.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+RawOtu <- RawOtu[,order(colnames(RawOtu))]
+#taxnomy strings
+taxmat <- read.table("tax.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+#mapping file 
+mapping <- read.table("mapingfileExternalNotDirty.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+##Import into phyloseq
+#otu table
+onlyOTU <- as.matrix(RawOtu)
+otu_sub  <- otu_table(onlyOTU, taxa_are_rows = T)
+#taxnomy strings
+t_tax <- as.matrix(taxmat)
+tax_sub = tax_table(t_tax)
+#mapping file
+metadata <- sample_data(mapping)
+
+##Create phyloseq object
+PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub)
+
+#Remove non bacteral reads
+PhOnlyBac <- subset_taxa(PhUnmodifed, Domain=="Bacteria")
+
+#filter out low read count samples
+PhNotEud <- subset_samples(PhOnlyBac, Animal != "Eudorylaimus")
+PhNotEud <-prune_samples(sample_sums(PhNotEud)>=100, PhNotEud)
+PhOnlyEud <- subset_samples(PhOnlyBac, Animal == "Eudorylaimus")
+PhOnlyEud <-prune_samples(sample_sums(PhOnlyEud)>=100, PhOnlyEud)
+PhMergeByAnimal <- merge_phyloseq(PhNotEud,PhOnlyEud)
+
+PhMergeByAnimal
+
+############### Stacked relative abudance by phyla R16s table##########
+
+PhMergeByAnimal
+
+ph4 <- PhMergeByAnimal
+ph4 <- subset_samples(ph4, Animal != "Mat")
+ph4 <-prune_samples(sample_sums(ph4)>=1, ph4)
+ps4<- transform_sample_counts(ph4, function(x) x / sum(x))
+ps <- tax_glom(ps4, "Phylum")
+ps2 <- transform_sample_counts(ps, function(x) x / sum(x))
+plot_bar(ps2)
+dat2 <- data.table(psmelt(ps2))
+# convert Phylum to a character vector from a factor because R
+dat2$Phylum <- as.character(dat2$Phylum)
+# group dataframe by Phylum, calculate median rel. abundance
+dat2[, median := median(Abundance, na.rm = TRUE), 
+     by = "Phylum"]
+# Change name to remainder of Phylum less than 1%
+dat2[(median <= 0.0055), Phylum := "Other Phyla "]
+
+
+write.csv(dat2,'dat2phylu2m.csv')
+
+dat2$Sample <- factor(dat2$Sample, levels = c(
+  "E_16s_140","E_16s_001", "P_16s_004", "P_16s_001", "T_16s_009", "T_16s_001"
+  
+))
+#palette <- c( "#121609" ,"#898AD4" ,"#7EDAA3", "#DF6AC7" ,"#D7BDD3" ,"#D47475", "#b4e560", "#DAA64C", "#9F47E0") 
+
+
+palette <- c( "#54555a","#CFE47E", "#D68092", "#E7C144", "#7C8BA6" ,"#ACAC9A" ,"#91E369", "#D05796", "#5896DB", "#4496e1", "#E44F9C", "#73E754" ,"#69E79B", "#73C8DC", "#E1A3DB", "#5DA3E9",
+              "#E7E2B0", "#885CD9", "#DA84DF", "#ACE4AA", "#DCDFE2", "#DCC1DC", "#E2AB92", "#8B38EA", "#D53D58", "#76A562", "#DDEE44", "#7874D1" ,"#DC47DA") #oldproeti E67A4C
+#put other phyla at top
+dat2$Phylum <- factor(dat2$Phylum, levels = c(
+  "Other Phyla ", 
+  "Bdellovibrionota", 
+  "Actinobacteriota", 
+  "Acidobacteriota", 
+  "Verrucomicrobiota",
+  "Planctomycetota", 
+  "Cyanobacteria",
+  "Proteobacteria",
+  "Bacteroidota"
+  
+  
+))
+
+### Plot graph with dots
+#edes2 <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = Phylum, pattern = Treatment))  + geom_col_pattern(color = "black", pattern_fill = "black", pattern_density = 0.1, pattern_spacing = 0.025, pattern_key_scale_factor = 0.6) + scale_pattern_manual(values = c(Mat = "none",Internal = "none", External = "circle"))+ theme_classic(15) + scale_fill_manual(values=palette)  + theme(legend.position="bottom", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Bacteria Phyla') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+#edes2 + geom_bar( stat = "identity") 
+#edes2
+
+### Plot graph without dots
+onlyphyla <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = Phylum,pattern = Treatment)) + scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))  + guides(fill = guide_legend(reverse = TRUE))  + geom_bar( stat = "identity") +  theme_classic(30) + scale_fill_manual(values=palette)  + theme(legend.position="right", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Bacteria Phyla') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+onlyphyla 
+
+
+
+## plot graph with edited labels
+#onlyphyla <- onlyphyla +  theme(legend.position = "none") + guides(fill = guide_legend(reverse = TRUE)) +scale_x_discrete( labels = c('Mat', 'External', 'Internal', 'Unwashed Plectus','Washed Tardigrade', 'Unwashed Tardigrade', "External"))
+#onlyphyla
+
+
+
+
+#########Stackde relativen abuncae by family or genus R16s table#######
+
+
+
+#only cyano
+ph4 <- PhMergeByAnimal
+ph4 <- subset_samples(ph4, Animal != "Mat")
+ph4 <-prune_samples(sample_sums(ph4)>=1, ph4)
+ps4<- transform_sample_counts(ph4, function(x) x / sum(x))
+ps <- tax_glom(ps4, "Genus")
+ps2 <- transform_sample_counts(ps, function(x) x / sum(x))
+ps2 <- subset_taxa(ps2, Phylum=="Cyanobacteria")
+dat2 <- data.table(psmelt(ps2))
+# convert Phylum to a character vector from a factor because R
+dat2$Genus <- as.character(dat2$Genus)
+# group dataframe by Phylum, calculate median rel. abundance
+dat2[, median := median(Abundance, na.rm = TRUE), 
+     by = "Genus"]
+
+onlyPhormidium <- dat2[dat2$Genus == 'Phormidium']
+onlyPhormidium$median <- 12
+noPhormidium <- dat2[dat2$Genus != 'Phormidium']
+dat2 <- rbind(onlyPhormidium, noPhormidium)
+
+
+
+onlyPhormidium <- dat2[dat2$Genus == 'Candidatus']
+onlyPhormidium$median <- 0
+noPhormidium <- dat2[dat2$Genus != 'Candidatus']
+dat2 <- rbind(onlyPhormidium, noPhormidium)
+
+
+# Change name to remainder of Phylum less than 1%
+dat2[(median <= 0.00000000000000000000000055), Genus := "Other Genera "]
+
+write.csv(dat2,'deletefororderin2g.csv')
+dat2$Sample <- factor(dat2$Sample, levels = c(
+  "E_16s_140","E_16s_001", "P_16s_004", "P_16s_001", "T_16s_009", "T_16s_001"
+  
+))
+#palette <- distinctColorPalette(15)
+palette <- c( "#5b5b5b", "#FFDB00", "#79AB75" ,"#DAC096", "#74C0DD", "#C9E7DC", "#de5650" ,"#CFEA9B", "#D6A0DB", "#78E460", "#DE5FC6", "#D1BCCC", "#DD9E46", "#9C45E0", "#75E6C3") 
+
+
+
+#put other phyla at top
+dat2$Genus <- factor(dat2$Genus, levels = c(
+  "Other Genera ", 
+  "Phormidium", 
+  "Nodosilinea", 
+  "Synechococcus", 
+  "Wilmottia",
+  "Calothrix", 
+  "Kamptonema", 
+  "Geitlerinema", 
+  "Pseudanabaena", 
+  "Nostoc", 
+  "Tychonema"
+))
+
+
+nopre = c(
+  "Other Genera ", 
+  bquote(italic("Phormidium")), 
+  bquote(italic("Nodosilinea")), 
+  bquote(italic("Synechococcus")), 
+  bquote(italic("Wilmottia")), 
+  bquote(italic("Calothrix")), 
+  bquote(italic("Kamptonema")), 
+  bquote(italic("Geitlerinema")), 
+  bquote(italic("Pseudanabaena")), 
+  bquote(italic("Nostoc")), 
+  bquote(italic("Tychonema"))
+)
+
+onlycyano <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = Genus))  + guides(fill = guide_legend(ncol=1, reverse = TRUE)) + scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal')) + geom_bar( stat = "identity") +  theme_classic(15) + scale_fill_manual(values=palette, labels =nopre)  + theme(legend.position="right", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Cyanobactiera Genera') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+onlycyano 
+
+
+
+### only Bacteroidota
+ph4 <- PhMergeByAnimal
+ph4 <- subset_samples(ph4, Animal != "Mat")
+ph4 <-prune_samples(sample_sums(ph4)>=1, ph4)
+ps4<- transform_sample_counts(ph4, function(x) x / sum(x))
+ps <- tax_glom(ps4, "Genus")
+ps2 <- transform_sample_counts(ps, function(x) x / sum(x))
+ps2 <- subset_taxa(ps2, Phylum=="Bacteroidota")
+dat2 <- data.table(psmelt(ps2))
+# convert Phylum to a character vector from a factor because R
+dat2$Genus <- as.character(dat2$Genus)
+# group dataframe by Phylum, calculate median rel. abundance
+dat2[, median := median(Abundance, na.rm = TRUE), 
+     by = "Genus"]
+# Change name to remainder of Phylum less than 1%
+
+
+
+
+dat2[(median <= 0.00029), Genus := "Other Genera "] #0.000199
+#dat2[(median <= 0.00000000000000000000000055), Genus := "Other Genera "]
+
+write.csv(dat2,'deletefororder2ing.csv')
+dat2$Sample <- factor(dat2$Sample, levels = c(
+  "E_16s_140","E_16s_001", "P_16s_004", "P_16s_001", "T_16s_009", "T_16s_001"
+  
+))
+#palette <- distinctColorPalette(30)
+palette <- c( 
+  "#5b5b5b", "#E3C98C" ,"#5A5786","#5FB4E0" ,"#8E74DD", "#9E35ED",
+  "#D18B8F", "#C7E9E8" ,"#E1586E" ,"#74EAB7", 
+  "#D9E046", "#BBE7A7" ,"#7DBA9D" ,"#729B57", "#D975C0",
+  "#DAE781", "#EBCCD5", "#7E99E6" ,"#7AD0E0", "#DA58DF",
+  "#674AD2", "#B7BCDD", "#E28253" ,"#DBA9E3" ,"#B4A493",
+  "#DEE6C7", "#81E17A", "#D9A63C" ,"#71E7DC", "#79E849"
+)
+
+
+
+#put other phyla at top #"Fluviicola",   bquote(italic("Fluviicola")),
+dat2$Genus <- factor(dat2$Genus, levels = c(
+  "Other Genera ",
+  "Rurimicrobium",
+  "Lewinella",
+  "Spirosoma",
+  "OLB8",
+  "Pedobacter",
+  "Rudanella",
+  "Paludibacter",
+  "Larkinella",
+  "Segetibacter",
+  "Arcicella",
+  "Fibrella",
+  "Flavihumibacter",
+  "Cytophaga",
+  "Chryseobacterium",
+  "Runella",
+  "Edaphobaculum",
+  "Terrimonas",
+  "Hymenobacter",
+  "Ferruginibacter",
+  "Flavobacterium"
+))
+
+nopre = c(
+  "Other Genera ", 
+  bquote(italic("Rurimicrobium")), 
+  bquote(italic("Lewinella")), 
+  bquote(italic("Spirosoma")), 
+  bquote(italic("OLB8")), 
+  bquote(italic("Pedobacter")), 
+  bquote(italic("Rudanella")), 
+  bquote(italic("Paludibacter")), 
+  bquote(italic("Larkinella")), 
+  bquote(italic("Segetibacter")),
+  bquote(italic("Arcicella")),
+  bquote(italic("Fibrella")),
+  bquote(italic("Flavihumibacter")),
+  bquote(italic("Cytophaga")),
+  bquote(italic("Chryseobacterium")),
+  bquote(italic("Runella")),
+  bquote(italic("Edaphobaculum")),
+  bquote(italic("Terrimonas")),
+  bquote(italic("Hymenobacter")),
+  bquote(italic("Ferruginibacter")),
+  bquote(italic("Flavobacterium"))
+)
+
+
+onlybac <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = Genus)) +scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))  + guides(fill = guide_legend(ncol=1, reverse = TRUE)) + geom_bar( stat = "identity") +  theme_classic(15) + scale_fill_manual(values=palette,labels =nopre)  + theme(legend.position="right", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Bacteroidota Genera') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+onlybac 
+
+
+### only PRotecobactea
+ph4 <- PhMergeByAnimal
+ph4 <- subset_samples(ph4, Animal != "Mat")
+ph4 <-prune_samples(sample_sums(ph4)>=1, ph4)
+ps4<- transform_sample_counts(ph4, function(x) x / sum(x))
+ps <- tax_glom(ps4, "Family")
+ps2 <- transform_sample_counts(ps, function(x) x / sum(x))
+ps2 <- subset_taxa(ps2, Phylum=="Proteobacteria")
+dat2 <- data.table(psmelt(ps2))
+# convert Phylum to a character vector from a factor because R
+dat2$Family <- as.character(dat2$Family)
+# group dataframe by Phylum, calculate median rel. abundance
+dat2[, median := median(Abundance, na.rm = TRUE), 
+     by = "Family"]
+# Change name to remainder of Phylum less than 1%
+
+
+
+
+dat2[(median <= 0.0010), Family := "Other Familes"] #0.000199
+#dat2[(median <= 0.00000000000000000000000055), Genus := "Other Genera "]
+
+write.csv(dat2,'deleteforor3dering.csv')
+dat2$Sample <- factor(dat2$Sample, levels = c(
+  "E_16s_140","E_16s_001", "P_16s_004", "P_16s_001", "T_16s_009", "T_16s_001"
+  
+))
+#palette <- distinctColorPalette(22)
+palette <- c( 
+  "#5b5b5b" ,"#7CE0E3" ,"#DDE39F" ,"#79BCDE" ,"#719754" ,"#DBA847", "#D2E7DE", "#DBC2DC", "#99E081" ,"#74E853", "#D7BA9F",
+  "#79E9B9", "#DB58D9" ,"#7460D4", "#DBE256", "#E1498D", "#D0858C" ,"#E37A55", "#5F5D86", "#D98DD3" ,"#9939EB" ,"#929EE5"
+  
+)
+
+
+
+#put other phyla at top
+dat2$Family <- factor(dat2$Family, levels = c(
+  "Other Familes",
+  "Nitrosomonadaceae",
+  "Devosiaceae",
+  "Rhodanobacteraceae",
+  "Moraxellaceae",
+  "Rhodocyclaceae", 
+  "Rhizobiaceae", 
+  "Caulobacteraceae", 
+  "Acetobacteraceae", 
+  "Rhodobacteraceae", 
+  "Xanthomonadaceae", 
+  "Sphingomonadaceae",
+  "Sutterellaceae", 
+  "Oxalobacteraceae",
+  "Pseudomonadaceae",
+  "Comamonadaceae"
+  
+))
+
+onlypro <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = Family))  + scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))  + guides(fill = guide_legend(ncol=1, reverse = TRUE)) + geom_bar( stat = "identity") +  theme_classic(15) + scale_fill_manual(values=palette)  + theme(legend.position="right", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Proteobacteria Families') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+onlypro
+
+
+### only ver Actinobacteriota 
+ph4 <- PhMergeByAnimal
+ph4 <- subset_samples(ph4, Animal != "Mat")
+ph4 <-prune_samples(sample_sums(ph4)>=1, ph4)
+ps4<- transform_sample_counts(ph4, function(x) x / sum(x))
+ps <- tax_glom(ps4, "Genus")
+ps2 <- transform_sample_counts(ps, function(x) x / sum(x))
+ps2 <- subset_taxa(ps2, Phylum=="Actinobacteriota")
+dat2 <- data.table(psmelt(ps2))
+# convert Phylum to a character vector from a factor because R
+dat2$Genus <- as.character(dat2$Genus)
+# group dataframe by Phylum, calculate median rel. abundance
+dat2[, median := median(Abundance, na.rm = TRUE), 
+     by = "Genus"]
+# Change name to remainder of Phylum less than 1%
+
+
+onlyPhormidium <- dat2[dat2$Genus == 'Sva0996']
+onlyPhormidium$median <- 0
+noPhormidium <- dat2[dat2$Genus != 'Sva0996']
+dat2 <- rbind(onlyPhormidium, noPhormidium)
+
+onlyPhormidium <- dat2[dat2$Genus == 'CL500-29']
+onlyPhormidium$median <- 0
+noPhormidium <- dat2[dat2$Genus != 'CL500-29']
+dat2 <- rbind(onlyPhormidium, noPhormidium)
+
+dat2[(median <= 0.000029), Genus := "Other Genera "] #0.000199
+#dat2[(median <= 0.00000000000000000000000055), Genus := "Other Genera "]
+
+write.csv(dat2,'deletefororder2ing.csv')
+dat2$Sample <- factor(dat2$Sample, levels = c(
+  "E_16s_140","E_16s_001", "P_16s_004", "P_16s_001", "T_16s_009", "T_16s_001"
+  
+))
+#palette <- distinctColorPalette(20)
+palette <- c( 
+  "#5b5b5b", "#9D3BEB", "#DF576C", "#7E62D7", "#DD9D4A", "#5E5D87" ,"#79DDDD", "#E053CC", "#DCC2DD", "#7CE8B8", "#919EE5",
+  "#D98BD0", "#DBDF55" ,"#CEE7DD", "#75E854", "#DCE09E", "#D6BEA6", "#79A778", "#99DE7F", "#CF8A89"
+)
+
+
+
+#put other phyla at top #"Fluviicola",   bquote(italic("Fluviicola")),
+dat2$Genus <- factor(dat2$Genus, levels = c(
+  "Other Genera ",
+  "Gaiella",
+  "Marmoricola",
+  "Ilumatobacter",
+  "Marisediminicola",
+  "Iamia",
+  "Nocardioides",
+  "Cryobacterium",
+  "Cutibacterium",
+  "Micrococcus",
+  "Corynebacterium",
+  "Nakamurella",
+  "Salinibacterium",
+  "Rhodoglobus",
+  "Microbacterium"
+))
+
+nopre = c(
+  "Other Genera ", 
+  bquote(italic("Gaiella")), 
+  bquote(italic("Marmoricola")), 
+  bquote(italic("Ilumatobacter")), 
+  bquote(italic("Marisediminicola")), 
+  bquote(italic("Iamia")), 
+  bquote(italic("Nocardioides")), 
+  bquote(italic("Cryobacterium")), 
+  bquote(italic("Cutibacterium")), 
+  bquote(italic("Micrococcus")),
+  bquote(italic("Corynebacterium")),
+  bquote(italic("Nakamurella")),
+  bquote(italic("Salinibacterium")),
+  bquote(italic("Rhodoglobus")),
+  bquote(italic("Microbacterium"))
+)
+
+
+onlyact <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = Genus))  + scale_fill_manual(values=palette,labels =nopre) +scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))  + guides(fill = guide_legend(ncol=1, reverse = TRUE)) + geom_bar( stat = "identity") +  theme_classic(15)   + theme(legend.position="right", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Actinobacteriota Genera') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+onlyact
+
+
+onlycyanoNoL <- onlycyano + theme(legend.position = "none") 
+my_legend <- get_legend(onlycyano)
+CyanoLeg<- as_ggplot(my_legend)
+
+onlybacNoL <- onlybac + theme(legend.position = "none") 
+my_legend <- get_legend(onlybac)
+BacLeg<- as_ggplot(my_legend)
+
+onlyproNoL <- onlypro + theme(legend.position = "none") 
+my_legend <- get_legend(onlypro)
+ProLeg<- as_ggplot(my_legend)
+
+onlyactNoL <- onlyact + theme(legend.position = "none") 
+my_legend <- get_legend(onlyact)
+ActLeg<- as_ggplot(my_legend)
+
+rightright <- ggarrange(CyanoLeg, BacLeg, ProLeg,  ncol = 1, nrow = 3)
+right <- ggarrange(onlycyanoNoL, onlybacNoL, onlyproNoL,   labels = c("b.", "c.", "d."),  ncol = 1, nrow = 3)
+Figure <- ggarrange(onlyphyla, right,rightright,  labels = c("a.",  "", ""), ncol = 3, nrow = 1, widths = c(1.5, 1, 0.7))
+Figure
+
+newsquare <- ggarrange(onlycyano, onlybac, onlypro, onlyact, ncol = 2, nrow = 2, labels = c("A.", "B.", "C.","D."))
+newsquare
+
+#########for powerpoint#########
+#for powerpoint
+#for powerpoint
+#for powerpoint
+#for powerpoint
+#for powerpoint
+#only cyano
+ph4 <- PhMergeByAnimal
+ph4 <- subset_samples(ph4, Animal != "Mat")
+ph4 <-prune_samples(sample_sums(ph4)>=1, ph4)
+ps4<- transform_sample_counts(ph4, function(x) x / sum(x))
+ps <- tax_glom(ps4, "Genus")
+ps2 <- transform_sample_counts(ps, function(x) x / sum(x))
+ps2 <- subset_taxa(ps2, Phylum=="Cyanobacteria")
+dat2 <- data.table(psmelt(ps2))
+# convert Phylum to a character vector from a factor because R
+dat2$Genus <- as.character(dat2$Genus)
+# group dataframe by Phylum, calculate median rel. abundance
+dat2[, median := median(Abundance, na.rm = TRUE), 
+     by = "Genus"]
+
+onlyPhormidium <- dat2[dat2$Genus == 'Phormidium']
+onlyPhormidium$median <- 12
+noPhormidium <- dat2[dat2$Genus != 'Phormidium']
+dat2 <- rbind(onlyPhormidium, noPhormidium)
+
+
+
+onlyPhormidium <- dat2[dat2$Genus == 'Candidatus']
+onlyPhormidium$median <- 0
+noPhormidium <- dat2[dat2$Genus != 'Candidatus']
+dat2 <- rbind(onlyPhormidium, noPhormidium)
+
+
+# Change name to remainder of Phylum less than 1%
+dat2[(median <= 0.00000000000000000000000055), Genus := "Other Genera "]
+
+write.csv(dat2,'deletefororderin2g.csv')
+dat2$Sample <- factor(dat2$Sample, levels = c(
+"T_16s_009", "T_16s_001","P_16s_004", "P_16s_001",  "E_16s_140","E_16s_001"
+  
+))
+#palette <- distinctColorPalette(15)
+palette <- c( "#5b5b5b", "#FFDB00", "#79AB75" ,"#DAC096", "#74C0DD", "#C9E7DC", "#de5650" ,"#CFEA9B", "#D6A0DB", "#78E460", "#DE5FC6", "#D1BCCC", "#DD9E46", "#9C45E0", "#75E6C3") 
+
+
+
+#put other phyla at top
+dat2$Genus <- factor(dat2$Genus, levels = c(
+  "Other Genera ", 
+  "Phormidium", 
+  "Nodosilinea", 
+  "Synechococcus", 
+  "Wilmottia",
+  "Calothrix", 
+  "Kamptonema", 
+  "Geitlerinema", 
+  "Pseudanabaena", 
+  "Nostoc", 
+  "Tychonema"
+))
+
+
+nopre = c(
+  "Other Genera ", 
+  bquote(italic("Phormidium")), 
+  bquote(italic("Nodosilinea")), 
+  bquote(italic("Synechococcus")), 
+  bquote(italic("Wilmottia")), 
+  bquote(italic("Calothrix")), 
+  bquote(italic("Kamptonema")), 
+  bquote(italic("Geitlerinema")), 
+  bquote(italic("Pseudanabaena")), 
+  bquote(italic("Nostoc")), 
+  bquote(italic("Tychonema"))
+)
+
+onlycyano <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = Genus))  + guides(fill = guide_legend(ncol=1, reverse = TRUE)) + scale_x_discrete(labels = c('External', 'Gut', 'External', 'Gut','External', 'Gut')) + geom_bar( stat = "identity") +  theme_classic(15) + scale_fill_manual(values=palette, labels =nopre)  + theme(legend.position="right", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Cyanobactiera Genera') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+onlycyano 
+
+
+
+### only Bacteroidota
+ph4 <- PhMergeByAnimal
+ph4 <- subset_samples(ph4, Animal != "Mat")
+ph4 <-prune_samples(sample_sums(ph4)>=1, ph4)
+ps4<- transform_sample_counts(ph4, function(x) x / sum(x))
+ps <- tax_glom(ps4, "Genus")
+ps2 <- transform_sample_counts(ps, function(x) x / sum(x))
+ps2 <- subset_taxa(ps2, Phylum=="Bacteroidota")
+dat2 <- data.table(psmelt(ps2))
+# convert Phylum to a character vector from a factor because R
+dat2$Genus <- as.character(dat2$Genus)
+# group dataframe by Phylum, calculate median rel. abundance
+dat2[, median := median(Abundance, na.rm = TRUE), 
+     by = "Genus"]
+# Change name to remainder of Phylum less than 1%
+
+
+
+
+dat2[(median <= 0.00029), Genus := "Other Genera "] #0.000199
+#dat2[(median <= 0.00000000000000000000000055), Genus := "Other Genera "]
+
+write.csv(dat2,'deletefororder2ing.csv')
+dat2$Sample <- factor(dat2$Sample, levels = c(
+  "T_16s_009", "T_16s_001","P_16s_004", "P_16s_001",  "E_16s_140","E_16s_001"
+  
+))
+#palette <- distinctColorPalette(30)
+palette <- c( 
+  "#5b5b5b", "#E3C98C" ,"#5A5786","#5FB4E0" ,"#8E74DD", "#9E35ED",
+  "#D18B8F", "#C7E9E8" ,"#E1586E" ,"#74EAB7", 
+  "#D9E046", "#BBE7A7" ,"#7DBA9D" ,"#729B57", "#D975C0",
+  "#DAE781", "#EBCCD5", "#7E99E6" ,"#7AD0E0", "#DA58DF",
+  "#674AD2", "#B7BCDD", "#E28253" ,"#DBA9E3" ,"#B4A493",
+  "#DEE6C7", "#81E17A", "#D9A63C" ,"#71E7DC", "#79E849"
+)
+
+
+
+#put other phyla at top #"Fluviicola",   bquote(italic("Fluviicola")),
+dat2$Genus <- factor(dat2$Genus, levels = c(
+  "Other Genera ",
+  "Rurimicrobium",
+  "Lewinella",
+  "Spirosoma",
+  "OLB8",
+  "Pedobacter",
+  "Rudanella",
+  "Paludibacter",
+  "Larkinella",
+  "Segetibacter",
+  "Arcicella",
+  "Fibrella",
+  "Flavihumibacter",
+  "Cytophaga",
+  "Chryseobacterium",
+  "Runella",
+  "Edaphobaculum",
+  "Terrimonas",
+  "Hymenobacter",
+  "Ferruginibacter",
+  "Flavobacterium"
+))
+
+nopre = c(
+  "Other Genera ", 
+  bquote(italic("Rurimicrobium")), 
+  bquote(italic("Lewinella")), 
+  bquote(italic("Spirosoma")), 
+  bquote(italic("OLB8")), 
+  bquote(italic("Pedobacter")), 
+  bquote(italic("Rudanella")), 
+  bquote(italic("Paludibacter")), 
+  bquote(italic("Larkinella")), 
+  bquote(italic("Segetibacter")),
+  bquote(italic("Arcicella")),
+  bquote(italic("Fibrella")),
+  bquote(italic("Flavihumibacter")),
+  bquote(italic("Cytophaga")),
+  bquote(italic("Chryseobacterium")),
+  bquote(italic("Runella")),
+  bquote(italic("Edaphobaculum")),
+  bquote(italic("Terrimonas")),
+  bquote(italic("Hymenobacter")),
+  bquote(italic("Ferruginibacter")),
+  bquote(italic("Flavobacterium"))
+)
+
+
+onlybac <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = Genus)) +scale_x_discrete(labels = c('External', 'Gut', 'External', 'Gut','External', 'Gut'))  + guides(fill = guide_legend(ncol=1, reverse = TRUE)) + geom_bar( stat = "identity") +  theme_classic(15) + scale_fill_manual(values=palette,labels =nopre)  + theme(legend.position="right", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Bacteroidota Genera') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+onlybac 
+
+
+### only PRotecobactea
+ph4 <- PhMergeByAnimal
+ph4 <- subset_samples(ph4, Animal != "Mat")
+ph4 <-prune_samples(sample_sums(ph4)>=1, ph4)
+ps4<- transform_sample_counts(ph4, function(x) x / sum(x))
+ps <- tax_glom(ps4, "Family")
+ps2 <- transform_sample_counts(ps, function(x) x / sum(x))
+ps2 <- subset_taxa(ps2, Phylum=="Proteobacteria")
+dat2 <- data.table(psmelt(ps2))
+# convert Phylum to a character vector from a factor because R
+dat2$Family <- as.character(dat2$Family)
+# group dataframe by Phylum, calculate median rel. abundance
+dat2[, median := median(Abundance, na.rm = TRUE), 
+     by = "Family"]
+# Change name to remainder of Phylum less than 1%
+
+
+
+
+dat2[(median <= 0.0010), Family := "Other Familes"] #0.000199
+#dat2[(median <= 0.00000000000000000000000055), Genus := "Other Genera "]
+
+write.csv(dat2,'deleteforor3dering.csv')
+dat2$Sample <- factor(dat2$Sample, levels = c(
+  "T_16s_009", "T_16s_001","P_16s_004", "P_16s_001",  "E_16s_140","E_16s_001"
+  
+))
+#palette <- distinctColorPalette(22)
+palette <- c( 
+  "#5b5b5b" ,"#7CE0E3" ,"#DDE39F" ,"#79BCDE" ,"#719754" ,"#DBA847", "#D2E7DE", "#DBC2DC", "#99E081" ,"#74E853", "#D7BA9F",
+  "#79E9B9", "#DB58D9" ,"#7460D4", "#DBE256", "#E1498D", "#D0858C" ,"#E37A55", "#5F5D86", "#D98DD3" ,"#9939EB" ,"#929EE5"
+  
+)
+
+
+
+#put other phyla at top
+dat2$Family <- factor(dat2$Family, levels = c(
+  "Other Familes",
+  "Nitrosomonadaceae",
+  "Devosiaceae",
+  "Rhodanobacteraceae",
+  "Moraxellaceae",
+  "Rhodocyclaceae", 
+  "Rhizobiaceae", 
+  "Caulobacteraceae", 
+  "Acetobacteraceae", 
+  "Rhodobacteraceae", 
+  "Xanthomonadaceae", 
+  "Sphingomonadaceae",
+  "Sutterellaceae", 
+  "Oxalobacteraceae",
+  "Pseudomonadaceae",
+  "Comamonadaceae"
+  
+))
+
+onlypro <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = Family))  + scale_x_discrete(labels = c('External', 'Gut', 'External', 'Gut','External', 'Gut'))  + guides(fill = guide_legend(ncol=1, reverse = TRUE)) + geom_bar( stat = "identity") +  theme_classic(15) + scale_fill_manual(values=palette)  + theme(legend.position="right", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Proteobacteria Families') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+onlypro
+
+
+
+
+
+
+onlycyano <- onlycyano + theme(legend.position = "bottom") 
+onlycyanoNoL <- onlycyano + theme(legend.position = "none") 
+my_legend <- get_legend(onlycyano)
+CyanoLeg<- as_ggplot(my_legend)
+onlybac <- onlybac + theme(legend.position = "bottom") 
+onlybacNoL <- onlybac + theme(legend.position = "none") 
+my_legend <- get_legend(onlybac)
+BacLeg<- as_ggplot(my_legend)
+onlypro <- onlypro + theme(legend.position = "bottom") 
+onlyproNoL <- onlypro + theme(legend.position = "none") 
+my_legend <- get_legend(onlypro)
+ProLeg<- as_ggplot(my_legend)
+forpowerpointtop <- ggarrange(onlycyanoNoL, onlybacNoL, onlyproNoL, ncol = 3, nrow = 1)
+forpowerpointtop
+forpowerpointbottom <- ggarrange(CyanoLeg, BacLeg, ProLeg, ncol = 3, nrow = 1)
+forpowerpointbottom
+
+forpowerpoint <- ggarrange(forpowerpointtop, forpowerpointbottom, ncol = 1, nrow = 2)
+forpowerpoint
+
+################ R18 new version 18s import by replicate with tree and alpha stats###########
+setwd("~/Desktop/ExternalMicrobiome/New18s made in R/Eventhough it says 16s is actually 18s I misslabeld but correct")
+
+
+RawOtu <- read.table("16byReplicateFinal.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+RawOtu <- RawOtu[,order(colnames(RawOtu))]
+#taxnomy strings
+taxmat <- read.table("tax.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+
+#mapping file 
+mapping <- read.table("mapingfileExternalNotDirty.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+
+#Add tree now
+filename <- "treewithotusremoved.nwk"
+#filename <- "18stree.nwk"
+rootedtree <- ape::read.tree(filename)
+#confirm rooted
+is.rooted(rootedtree)
+
+
+##Import into phyloseq
+#otu table
+#newotu
+#onlyOTU <- as.matrix(newotu)
+onlyOTU <- as.matrix(RawOtu)
+otu_sub  <- otu_table(onlyOTU, taxa_are_rows = T)
+#taxnomy strings
+t_tax <- as.matrix(taxmat)
+tax_sub = tax_table(t_tax)
+#mapping file
+metadata <- sample_data(mapping)
+
+##Create phyloseq object, the tree does not work with the !=command
+PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub,rootedtree)
+
+
+library(phyloseq)
+library(agricolae)
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(glmmTMB)
+library(emmeans)
+library(car)
+library(MuMIn)
+library(agridat)
+library(DHARMa)
+library(viridis)
+library(hillR)
+library(GGally)
+library(lavaan)
+
+
+#This is your modified phyloseq object from above (with tree)
+PhOnlyClean10 <- PhUnmodifed
+
+#Export the out table
+dat3= as(otu_table(PhOnlyClean10), "matrix")
+#Transform and make into a dataframe
+dat3t2 <- as.data.frame(t(dat3))
+head(dat3t2)
+
+#Make dataframe to put your results into
+otu_BF_div <- dat3t2[1:1]
+
+#Calcualte hill numbers
+otu_BF_div$rich <- hill_taxa(dat3t2, q=0)                                                                                               
+otu_BF_div$shan <- hill_taxa(dat3t2, q=1)                                                                                               
+otu_BF_div$simp <- hill_taxa(dat3t2, q=2)
+
+#Remove that first collum of junk
+otu_BF_div[1] <- NULL
+
+#your final results
+otu_BF_div
+
+write.csv(otu_BF_div,'HillNumbersExternalInternal18s.csv')
+
+
+
+#Hill Numbers PD
+otu_BF_div
+
+otu_BF_div <- dat3t2[1:1]
+
+
+tree1 = phy_tree(PhOnlyClean10)
+otu_BF_div$faith <- hill_phylo(dat3t2,tree1, q=0)          
+
+write.csv(otu_BF_div,'HillNumbersExternalInternal18sWITHFAITH.csv')
+
+##################
+
+otunohost <- PhUnmodifed
+newotu <- ceiling(as(otu_table(otunohost), "matrix"))
+
+otunohost <- subset_samples(otunohost, Animal != "Mat")
+otunohostexternal <- subset_samples(otunohost, Treatment == "External")
+otunohostexternal <-prune_samples(sample_sums(otunohostexternal) <= 250, otunohost)
+rarecurve(t(otu_table(otunohostexternal)), step=25, cex=0.5)
+
+
+
+############## 18s alpha diveity graphs R18 ###############
+setwd("~/Desktop/ExternalMicrobiome/New18s made in R/Eventhough it says 16s is actually 18s I misslabeld but correct")
+AlphaForPhilNoUncultWithMetadata <- read.csv("HillNumbersExternalInternal18sWithMetadataNoMats.csv")
+alphadata <- AlphaForPhilNoUncultWithMetadata
+
+alphadata$MicrobiomeType <- factor(alphadata$MicrobiomeType,levels = c( 
+                                                                         "Tardigradeexternal","Tardigradeinternal","Plectusexternal", "Plectusinternal","Eudorylaimusexternal","Eudorylaimusinternal"  ))
+
+
+
+#Shannon
+p <- ggplot(alphadata, aes(x=MicrobiomeType, y=shan,fill=MicrobiomeType ))  + geom_boxplot() 
+p <- p +theme_classic(15,) + ylab("Shannon Diversity Index (Hill Numbers)") + theme(axis.title.x=element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+Shannon <- p  + scale_fill_manual(values=c("#74007D" ,"#E500FF", "#4800FF", "#00FDFF",  "#FF0000","#FFBB00")) + theme(axis.text.x = element_text(angle = 0)) +scale_x_discrete(labels = c('External', 'Gut', 'External', 'Gut','External', 'Gut'))  + theme(legend.position = "none") +scale_y_continuous(limits = c(0,40), expand = c(0,0))
+Shannon
+ 
+
+
+#Simpsons
+p <- ggplot(alphadata, aes(x=MicrobiomeType, y=simp,fill=MicrobiomeType, pattern = Treatment ))  + geom_boxplot_pattern( color = "black", pattern_fill = "black", pattern_density = 0.1, pattern_spacing = 0.025, pattern_key_scale_factor = 0.6) + scale_pattern_manual(values = c(Internal = "none", External = "circle"))
+p <- p +theme_classic(15,) + ylab("Simpsons Diversity Index (Hill Numbers)") + theme(axis.title.x=element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+Simpsons <- p + scale_fill_manual(values=c( "#FC1520","#FC1520", "#7d98ff","#7d98ff", "#BB28BA", "#BB28BA")) + theme(axis.text.x = element_text(angle = 0)) +scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))    + theme(legend.position = "none") +scale_y_continuous(limits = c(0,30), expand = c(0,0))
+Simpsons
+
+#Faiths
+p <- ggplot(alphadata, aes(x=MicrobiomeType, y=faith,fill=MicrobiomeType, pattern = Treatment ))  + geom_boxplot_pattern( color = "black", pattern_fill = "black", pattern_density = 0.1, pattern_spacing = 0.025, pattern_key_scale_factor = 0.6)+ scale_pattern_manual(values = c(Internal = "none", External = "circle"))
+p <- p +theme_classic(15,) + ylab("Faith's Phylogentic Diversity (Hill Numbers)") + theme(axis.title.x=element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+Faith <- p + scale_fill_manual(values=c( "#FC1520","#FC1520", "#7d98ff","#7d98ff", "#BB28BA", "#BB28BA")) + theme(axis.text.x = element_text(angle = 0))+scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))   + theme(legend.position = "none") +scale_y_continuous(limits = c(0,20), expand = c(0,0))
+Faith
+
+#Richness
+p <- ggplot(alphadata, aes(x=MicrobiomeType, y=rich,fill=MicrobiomeType, pattern = Treatment ))  + geom_boxplot_pattern(color = "black", pattern_fill = "black", pattern_density = 0.1, pattern_spacing = 0.025, pattern_key_scale_factor = 0.6) + scale_pattern_manual(values = c(Internal = "none", External = "circle"))
+p <- p +theme_classic(15,) + ylab("ASV Richness") + theme(axis.title.x=element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+Rich <- p + scale_fill_manual(values=c( "#FC1520","#FC1520", "#7d98ff","#7d98ff", "#BB28BA", "#BB28BA")) + theme(axis.text.x = element_text(angle = 0)) +scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))    + theme(legend.position = "none") +scale_y_continuous(limits = c(0,150), expand = c(0,0))
+Rich
+
+Figure1 <- ggarrange(Shannon, Rich, Faith, Simpsons, labels = c("a.",  "b.", "c.", "d."), ncol = 2, nrow = 2)
+Figure1
+
+
+
+
+alphastats <- AlphaForPhilNoUncultWithMetadata
+head(alphastats)
+
+### statistics for each alpha diversity 
+glm1 <- glm(rich~ Animal*Treatment*Stream*MatType, data=alphastats, family=gaussian())
+Anova(glm1, type=2) 
+sim_glm1 <- simulateResiduals(fittedModel = glm1, n = 250)
+plot(sim_glm1)
+summary(glm1)
+
+#shannon connected letters
+alphastats$MicrobiomeType= as.factor(alphastats$MicrobiomeType)
+
+glm1 <- glm(simp~ MicrobiomeType, data=alphastats, family=gaussian())
+summary(glm1)
+rsq(glm1)
+ph <- glht(glm1, mcp(MicrobiomeType = "Tukey"))
+cld(ph)
+
+
+
+
+newotu <- ceiling(as(otu_table(otunohost), "matrix"))
+
+otunohost <- subset_samples(otunohost, Animal != "Mat")
+otunohost <- subset_samples(otunohost, Treatment == "External")
+otunohost <-prune_samples(sample_sums(otunohost)<=100, otunohost)
+rarecurve(t(otu_table(otunohost)), step=10, cex=0.5)
+
+################R16 beta diversity##########
+setwd("~/Desktop/ExternalMicrobiome/New16s made in R")
+
+
+##Import into R
+#otu table
+RawOtu <- read.table("16byreplicatewithexternaldeletedirynoheader.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+RawOtu <- RawOtu[,order(colnames(RawOtu))]
+#taxnomy strings
+taxmat <- read.table("tax.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+#mapping file 
+mapping <- read.table("mapingfileExternalNotDirty.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+##Import into phyloseq
+#otu table
+onlyOTU <- as.matrix(RawOtu)
+otu_sub  <- otu_table(onlyOTU, taxa_are_rows = T)
+#taxnomy strings
+t_tax <- as.matrix(taxmat)
+tax_sub = tax_table(t_tax)
+#mapping file
+metadata <- sample_data(mapping)
+
+##Create phyloseq object
+PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub)
+PhUnmodifed <-prune_samples(sample_sums(PhUnmodifed)>=10, PhUnmodifed)
+#Remove non bacteral reads
+PhOnlyBac <- subset_taxa(PhUnmodifed, Domain=="Bacteria")
+
+#for running 18s through this
+#PhOnlyBac <- PhUnmodifed
+PhOnlyBac = subset_samples(PhOnlyBac, Animal!="Mat" )
+
+#RELPhOnlyClean10 <- PhOnlyBac
+
+Eli 
+RELPhOnlyClean10 <- transform_sample_counts(PhOnlyBac, function(x) x / sum(x))
+#sample_data(RELPhOnlyClean10)$Microbiome_Type <- factor(sample_data(RELPhOnlyClean10)$Microbiome_Type,levels = c( "Eudorylaimusexternal","Eudorylaimusclean", 
+                                                                                                                  "Plectusexternal", "Plectusclean",  "Tardigradeexternal","Tardigradeclean"))
+allGroupsColors <- c( "#f49f98","#E94032", "#c0ccfc",  "#414c7d", "#d59ed9", "#AC3DB4")
+wunifrac_dist = phyloseq::distance(RELPhOnlyClean10, method="bray", weighted=F)
+ordination = ordinate(RELPhOnlyClean10, method="NMDS", distance=wunifrac_dist)
+plotbeta <- plot_ordination(RELPhOnlyClean10, label="SampleID", ordination, color="Microbiome_Type") + theme_classic(30)
+plotbeta <- plotbeta + geom_point( size = 3)+ scale_color_manual(values = allGroupsColors)
+plotbeta
+
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_064")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_111")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_118")
+
+
+
+
+#remotes::install_github("microbiome/microbiome")
+#PhOnlyBac <- transform(PhOnlyBac, 'log10')
+
+# try with NDMS
+allGroupsColors <- c( "#f49f98","#E94032", "#c0ccfc",  "#414c7d", "#d59ed9", "#AC3DB4")
+wunifrac_dist = phyloseq::distance(RELPhOnlyClean10, method="bray", weighted=F)
+ordination = ordinate(RELPhOnlyClean10, method="NMDS", distance=wunifrac_dist)
+plotbeta <- plot_ordination(RELPhOnlyClean10, ordination, color="Microbiome_Type") + theme_classic(30)
+plotbeta <- plotbeta + geom_point( size = 3)+ scale_color_manual(values = allGroupsColors)
+plotbeta
+
+###this is the good betadivery stat
+sampledf <- data.frame(sample_data(RELPhOnlyClean10))
+adonis( wunifrac_dist ~ Animal * Treatment * Mat_Type + StreamName, data = sampledf, permutations = 9999)
+
+
+### split by treatment
+RELPhOnlyClean10External <- subset_samples(RELPhOnlyClean10, Treatment=="External")
+wunifrac_dist = phyloseq::distance(RELPhOnlyClean10External, method="bray", weighted=F)
+ordination = ordinate(RELPhOnlyClean10External, method="PCoA", distance=wunifrac_dist)
+sampledf <- data.frame(sample_data(RELPhOnlyClean10External))
+adonis( wunifrac_dist ~ Animal * Mat_Type + StreamName, data = sampledf, permutations = 9999)
+
+RELPhOnlyClean10Internal <- subset_samples(RELPhOnlyClean10, Treatment=="Internal")
+wunifrac_dist = phyloseq::distance(RELPhOnlyClean10Internal, method="bray", weighted=F)
+ordination = ordinate(RELPhOnlyClean10Internal, method="PCoA", distance=wunifrac_dist)
+sampledf <- data.frame(sample_data(RELPhOnlyClean10Internal))
+adonis( wunifrac_dist ~ Animal * Mat_Type + StreamName, data = sampledf, permutations = 9999)
+
+
+
+####### try other plotting####### 
+setwd("~/Desktop/ExternalMicrobiome/New16s made in R")
+
+
+##Import into R
+#otu table
+RawOtu <- read.table("16byreplicatewithexternaldeletedirynoheader.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+RawOtu <- RawOtu[,order(colnames(RawOtu))]
+#taxnomy strings
+taxmat <- read.table("tax.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+#mapping file 
+mapping <- read.table("mapingfileExternalNotDirty.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+##Import into phyloseq
+#otu table
+onlyOTU <- as.matrix(RawOtu)
+otu_sub  <- otu_table(onlyOTU, taxa_are_rows = T)
+#taxnomy strings
+t_tax <- as.matrix(taxmat)
+tax_sub = tax_table(t_tax)
+#mapping file
+metadata <- sample_data(mapping)
+
+
+filename <- "rootedtree.nwk"
+rootedtree <- ape::read.tree(filename)
+is.rooted(rootedtree)
+PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub,rootedtree)
+PhUnmodifed = subset_samples(PhUnmodifed,SampleID!="E_16s_064")
+
+##Create phyloseq object
+#PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub)
+PhUnmodifed <-prune_samples(sample_sums(PhUnmodifed)>=10, PhUnmodifed)
+#Remove non bacteral reads
+PhOnlyBac <- subset_taxa(PhUnmodifed, Domain=="Bacteria")
+RELPhOnlyClean10
+
+#unifrac 
+wunifrac_dist = phyloseq::distance(PhUnmodifed, method="unifrac")
+ordination = ordinate(RELPhOnlyClean10, method="PCoA", distance=test)
+plotbeta <- plot_ordination(RELPhOnlyClean10, ordination, color="Microbiome_Type") + theme_classic(30)
+plotbeta <- plotbeta + geom_point( size = 3)+ scale_color_manual(values = allGroupsColors)
+plotbeta
+
+devtools::install_github("david-barnett/microViz")
+
+
+
+
+
+###Aitchinson Distance for Bacteria########
+RELPhOnlyClean10
+#export otu table
+RELPhOnlyClean102 = subset_samples(RELPhOnlyClean10,SampleID!="E_16s_064")
+bacotu = as(otu_table(RELPhOnlyClean102), "matrix")
+
+#write.csv(bacotu,'forkatieraw.csv') 
+
+
+#PhOnlyBac
+#PhOnlyBac2 = subset_samples(PhOnlyBac,SampleID!="E_16s_064")
+#bacotu = as(otu_table(PhOnlyBac2), "matrix")
+#bacotu <- ceiling(bacotu)
+
+#this removes samples with low read counts, use raw abudance and not realative, also remove samples with zero reads
+count <- 0 #this is the chosen cutoff
+Bac_sd_can_2 <- data.frame(bacotu[which(apply(bacotu, 1, function(x){mean(x)}) > count),],
+                           check.names=F)
+Bac_sd_can_czm <- cmultRepl(Bac_sd_can_2,  label=0, method="CZM")
+#Log-ratio transform the data
+#CLR
+Bac_sd_can_czm_clr <- clr(Bac_sd_can_czm)
+#Calculate Distances
+#CLR transformed data
+Bac_sd_can_czm_clr.dist <- vegdist(t(Bac_sd_can_czm_clr), method = "euclidean", diag = FALSE, upper = TRUE)
+##### Beta-diversity Plotting #####
+## Define variables for plot code
+#Modify for each microorganisms
+plot.dm<-as.matrix(Bac_sd_can_czm_clr.dist) # Change the source of the plot data here
+
+##permova stuf
+#sampledf <- data.frame(sample_data(RELPhOnlyClean10))
+#adonis( Bac_sd_can_czm_clr.dist ~ Animal * Treatment * Mat_Type + StreamName, data = sampledf, permutations = 9999)
+
+# FUNCTION:
+Plot_ConvexHull<-function(xcoord, ycoord, lcolor){
+  hpts <- chull(x = xcoord, y = ycoord)
+  hpts <- c(hpts, hpts[1])
+  lines(xcoord[hpts], ycoord[hpts], col = lcolor)
+}
+# END OF FUNCTION
+# Now run the Principle Coordinate Analysis ("pcoa") in package ape:
+pcoa.pts<-pcoa(plot.dm,correction="cailliez")
+x.minimum<-min(pcoa.pts$vectors[,1])
+x.maximum<-max(pcoa.pts$vectors[,1])
+y.minimum<-min(pcoa.pts$vectors[,2])
+y.maximum<-max(pcoa.pts$vectors[,2])
+
+# And to be fancy, b/c Jack put the time into figuring this out,
+# calculate the % variation explained by each axis
+# getting percent explained by each PC vector
+vars_percent <- (pcoa.pts$values$Eigenvalues / sum(pcoa.pts$values$Eigenvalues)) * 100
+# Step 1: make very simple plot, no colors
+
+plot(pcoa.pts$vectors[,2] ~ pcoa.pts$vectors[,1],
+     xlab=paste("PCo1: ", round(vars_percent[1], 2), "%", sep=""),
+     ylab=paste("PCo2: ", round(vars_percent[2], 2), "%", sep=""),
+     cex=1,col="black",main="Aitchinson Community", # CHANGE this to be the title of the plot
+     #xlim=c(x.minimum-0.5, x.maximum+0), ylim=c(y.minimum-0.5, y.maximum+0)
+     xlim=c(x.minimum-50, x.maximum+50), ylim=c(y.minimum-50, y.maximum+50)
+)
+
+
+
+allGroupsColors <- c("#7CFC00", "#FF0000","#FFBB00", "#4800FF", "#00FDFF",  "#74007D" ,"#E500FF")
+
+# Step 2: now subset vectors for the positions in the alpha file that correspond to cohcryo
+map <- subset(mapping, rownames(mapping) %in% rownames(as.matrix(plot.dm)))
+#write.csv(map,'forkatiemapping.csv') 
+
+
+#Bp.ptx <- which((map$Animal=="Plectus") & (map$Treatment== "External"))
+Plectusexternal <- which((map$Microbiome_Type =="Plectusexternal"))
+points(pcoa.pts$vectors[Plectusexternal,2] ~ pcoa.pts$vectors[Plectusexternal,1],pch=15, cex=2.3, col="#4800FF")
+Plectusinternall <- which((map$Microbiome_Type =="Plectusclean"))
+points(pcoa.pts$vectors[Plectusinternall,2] ~ pcoa.pts$vectors[Plectusinternall,1],pch=15, cex=2.3, col="#00FDFF")
+
+Eudorylaimusexternal <- which((map$Microbiome_Type =="Eudorylaimusexternal"))
+points(pcoa.pts$vectors[Eudorylaimusexternal,2] ~ pcoa.pts$vectors[Eudorylaimusexternal,1],pch=15, cex=2.3, col="#FF0000")
+Eudorylaimusclean <- which((map$Microbiome_Type =="Eudorylaimusclean"))
+points(pcoa.pts$vectors[Eudorylaimusclean,2] ~ pcoa.pts$vectors[Eudorylaimusclean,1],pch=15, cex=2.3, col="#FFBB00")
+
+Tardigradeexternal <- which((map$Microbiome_Type =="Tardigradeexternal"))
+points(pcoa.pts$vectors[Tardigradeexternal,2] ~ pcoa.pts$vectors[Tardigradeexternal,1],pch=15, cex=2.3, col="#74007D")
+Tardigradeclean <- which((map$Microbiome_Type =="Tardigradeclean"))
+points(pcoa.pts$vectors[Tardigradeclean,2] ~ pcoa.pts$vectors[Tardigradeclean,1],pch=15, cex=2.3, col="#E500FF")
+
+Plectusexternal <- which((map$StreamName =="BowlesCreek"))
+points(pcoa.pts$vectors[Plectusexternal,2] ~ pcoa.pts$vectors[Plectusexternal,1],pch=15, cex=2.3, col="#4800FF")
+Plectusexternal <- which((map$StreamName =="CanadaStream"))
+points(pcoa.pts$vectors[Plectusexternal,2] ~ pcoa.pts$vectors[Plectusexternal,1],pch=15, cex=2.3, col="#FF0000")
+Plectusexternal <- which((map$StreamName =="VG"))
+points(pcoa.pts$vectors[Plectusexternal,2] ~ pcoa.pts$vectors[Plectusexternal,1],pch=15, cex=2.3, col="#74007D")
+Plectusexternal <- which((map$StreamName =="DeltaStream"))
+points(pcoa.pts$vectors[Plectusexternal,2] ~ pcoa.pts$vectors[Plectusexternal,1],pch=15, cex=2.3, col="#E500FF")
+
+
+#Bs.ptx <- which((map$Animal=="Plectus") & (map$Treatment== "Internal"))
+
+
+Bp.ptx <- which((map$Grower=="BORDER LAKE") & (map$Field.ID== "PRAIRIE"))
+Bs.ptx <- which((map$Grower=="BORDER LAKE") & (map$Field.ID== "SHORELINE"))
+Bl.ptx <- which((map$Grower=="BORDER LAKE") & (map$Field.ID== "SEDIMENT"))
+Ip.ptx <- which((map$Grower=="ISLAND LAKE") & (map$Field.ID== "PRAIRIE"))
+Is.ptx <- which((map$Grower=="ISLAND LAKE") & (map$Field.ID== "SHORELINE"))
+Il.ptx <- which((map$Grower=="ISLAND LAKE") & (map$Field.ID== "SEDIMENT"))
+Gp.ptx <- which((map$Grower=="GIMLET LAKE") & (map$Field.ID== "PRAIRIE"))
+Gs.ptx <- which((map$Grower=="GIMLET LAKE") & (map$Field.ID== "SHORELINE"))
+Gl.ptx <- which((map$Grower=="GIMLET LAKE") & (map$Field.ID== "SEDIMENT"))
+BNp.ptx <- which((map$Grower=="BEAN LAKE") & (map$Field.ID== "PRAIRIE"))
+BNs.ptx <- which((map$Grower=="BEAN LAKE") & (map$Field.ID== "SHORELINE"))
+BNl.ptx <- which((map$Grower=="BEAN LAKE") & (map$Field.ID== "SEDIMENT"))
+Kp.ptx <- which((map$Grower=="KOKJOHN LAKE") & (map$Field.ID== "PRAIRIE"))
+Ks.ptx <-  which((map$Grower=="KOKJOHN LAKE") & (map$Field.ID== "SHORELINE"))
+Kl.ptx <- which((map$Grower=="KOKJOHN LAKE") & (map$Field.ID== "SEDIMENT"))
+Praire <- which(map$Field.ID == "PRAIRIE")
+Shore <- which(map$Field.ID == "SHORELINE")
+Sediment <-which(map$Field.ID=="SEDIMENT")
+
+
+
+
+# plot the points for each group using points()
+points(pcoa.pts$vectors[Il.ptx,2] ~ pcoa.pts$vectors[Il.ptx,1],pch=17, cex=2.3, col="blue")
+points(pcoa.pts$vectors[Gl.ptx,2] ~ pcoa.pts$vectors[Gl.ptx,1],pch=17, cex=2.3, col="lightblue")
+points(pcoa.pts$vectors[BNl.ptx,2] ~ pcoa.pts$vectors[BNl.ptx,1], pch=17, cex=2.3, col="darkgreen")
+points(pcoa.pts$vectors[Kl.ptx,2] ~ pcoa.pts$vectors[Kl.ptx,1],pch=17, cex=2.3, col="yellow")
+points(pcoa.pts$vectors[Bl.ptx,2] ~ pcoa.pts$vectors[Bl.ptx,1], pch=17, cex=2.3, col="red")
+points(pcoa.pts$vectors[Is.ptx,2] ~ pcoa.pts$vectors[Is.ptx,1],pch=16, cex=2.3, col="blue")
+points(pcoa.pts$vectors[Gs.ptx,2] ~ pcoa.pts$vectors[Gs.ptx,1],pch=16, cex=2.3, col="lightblue")
+points(pcoa.pts$vectors[BNs.ptx,2] ~ pcoa.pts$vectors[BNs.ptx,1], pch=16, cex=2.3, col="darkgreen")
+points(pcoa.pts$vectors[Ks.ptx,2] ~ pcoa.pts$vectors[Ks.ptx,1],pch=16, cex=2.3, col="yellow")
+points(pcoa.pts$vectors[Bs.ptx,2] ~ pcoa.pts$vectors[Bs.ptx,1],pch=16, cex=2.3, col="red")
+points(pcoa.pts$vectors[Ip.ptx,2] ~ pcoa.pts$vectors[Ip.ptx,1],pch=15, cex=2.3, col= "blue")
+points(pcoa.pts$vectors[Gp.ptx,2] ~ pcoa.pts$vectors[Gp.ptx,1],pch=15, cex=2.3, col="lightblue")
+points(pcoa.pts$vectors[BNp.ptx,2] ~ pcoa.pts$vectors[BNp.ptx,1],pch=15, cex=2.3, col="darkgreen")
+points(pcoa.pts$vectors[Kp.ptx,2] ~ pcoa.pts$vectors[Kp.ptx,1],pch=15, cex=2.3, col="yellow")
+points(pcoa.pts$vectors[Bp.ptx,2] ~ pcoa.pts$vectors[Bp.ptx,1],pch=15, cex=2.3, col="red")
+Plot_ConvexHull(xcoord =pcoa.pts$vectors[Praire,1], ycoord = pcoa.pts$vectors[Praire,2], lcolor = "grey")
+Plot_ConvexHull(xcoord = pcoa.pts$vectors[Shore,1], ycoord = pcoa.pts$vectors[Shore,2], lcolor = "grey")
+Plot_ConvexHull(xcoord = pcoa.pts$vectors[Sediment,1], ycoord = pcoa.pts$vectors[Sediment,2],lcolor = "grey")
+
+
+legend(-23,-15, legend=c("Island","Gimlet","Bean","Kokjohn","Border"), col=c("blue","lightblue","darkgreen","yellow","red"), pch=c(18,18,18,18,18), cex= 1.2)
+legend(20,40, legend=c("Sediment", "Shoreline", "Prairie"), col=c("black", "black", "black"), pch=c(17,16,15), cex= 1.2)
+
+
+
+
+
+adonis( wunifrac_dist ~ Animal * Treatment * Mat_Type + StreamName, data = sampledf, permutations = 9999)
+
+
+
+
+plotbeta +stat_ellipse( level = 0.90, type="t")
+
+
+jaccard_45 = phyloseq::distance(RELPhOnlyClean10, method="bray", weighted=F)
+
+df_45 <- as(sample_data(RELPhOnlyClean10), "data.frame")
+
+groups <- df_45[["Microbiome_Type"]]
+groups
+
+mod <- betadisper(jaccard_45, bias.adjust=T, groups)
+mod
+
+df <- data.frame(Distance_to_centroid=mod$distances,Group=mod$group)
+groups <- mod$group
+
+
+
+
+
+sampledf$Matnumber <- factor(sampledf$Matnumber,levels = c( "1","2", "3", "4",  "5","6","7","8","9",
+                                                            "10","11","12","13","14",
+                                                            "15","16","17","18","19","20",
+                                                            "21",
+                                                            "22","23","24"))
+
+
+#adonis2( wunifrac_dist ~ Animal * Treatment * Mat_Type + StreamName, by = "terms", data = sampledf, permutations = 999)
+by = "terms"
+
+
+
+
+
+
+
+#goherebeta
+adonis2( wunifrac_dist ~ Animal * Treatment * Mat_Type + StreamName, data = sampledf, permutations = 999)
+
+mm2 <- lmer(faith ~ Animal*Treatment*Mat_Type+Stream+(1|Mat_Replicate/Animal), data=alphastats)
+anova(mm2, ddf="Kenward-Roger")
+emmeans(mm2,pairwise~Treatment)
+emmeans(mm2,pairwise~Treatment|Animal)
+
+# permutation MANOVA
+
+write.csv(wunifrac_dist,'fixthis.csv') 
+wunifrac_dist
+wunifrac_distcomplete <- completeMatrix(wunifrac_dist)
+m <- as.matrix(wunifrac_dist)
+
+mt <- t(m)
+
+##another way to pull it out
+OTU1 = as(otu_table(RELPhOnlyClean10), "matrix")
+
+sampledf
+
+bray.dist<-vegdist(t(OTU1), method="bray") #
+pairwise.perm.manova(wunifrac_dist ~ Animal, data=sampledf, nperm = 100)
+
+adonis(iris[,1:4]~Species,data=iris,method="euclidean")
+
+adonis(iris[,1:4]~Species,data=iris,method="euclidean")
+pairwise.perm.manova(wunifrac_dist, sampledf$Treatment, nperm = 49)
+pairwise.perm.manova(wunifrac_dist, sampledf$Animal, nperm = 49)
+pairwise.perm.manova(wunifrac_dist, sampledf$Microbiome_Type, nperm = 49)
+
+pairwise.perm.manova(wunifrac_dist, sampledf$Treatment, nperm = 49)
+pairwise.perm.manova(m, sampledf$Treatment, nperm = 49)
+pairwise.perm.manova(iris[,1:4],iris$Species,nperm=49)
+
+pairwise.perm.manova(dist(m,"euclidean"), sampledf$Treatment, nperm = 49)
+pairwise.perm.manova(dist(iris[,1:4],"euclidean"),iris$Species,nperm=49)
+
+install.packages("phyloseq") 
+###katie try this‘RVAideMemoire’
+library(RVAideMemoire)
+pairwise.perm.manova(dist(iris[,1:4],"euclidean"),iris$Species,nperm=49)
+
+adonis2(wunifrac_dist ~ Animal, data = sampledf)
+pairwise.perm.manova(bray.dist ~ Animal, data=sampledf, nperm = 100)
+# Pairwise comparisons
+# (not enough permutations here but faster to run)
+adonis2(iris[,1:4]~Species,data=iris,method="euclidean")
+pairwise.perm.manova(iris[,1:4],iris$Species,nperm=49)
+
+# or
+pairwise.perm.manova(dist(iris[,1:4],"euclidean"),iris$Species,nperm=49)
+data(iris)
+pairwise.perm.manova(iris[,1:4],iris$Species,nperm=49)
+adonis(iris[,1:4]~Species,data=iris,method="euclidean")
+
+adonis2(wunifrac_dist ~ Animal, data = sampledf)
+pairwise.perm.manova(wunifrac_dist,wunifrac_dist$Animal,nperm=49)
+
+
+remotes::install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
+wunifrac_dist
+distmatrix <-wunifrac_dist
+library(pairwiseAdonis)
+pairwiseAdonis() 
+pairwise.adonis2(Y ~ NO3/field, data = dat, strata = 'field')
+metadata <- sampledf
+pairwise.adonis2(distmatrix ~  Treatment *Animal* Mat_Type + StreamName, data = metadata)
+
+pairwise.adonis2(distmatrix ~  Microbiome_Type, data = metadata)
+
+workingpairwise
+
+install.packages("remotes")
+remotes::install_github("leffj/mctoolsr")
+library(mctoolsr)
+
+data(GlobalPatterns)
+metadata <- as(sample_data(sampledf), "data.frame")
+dist.uf <- phyloseq::distance(GlobalPatterns, method = "unifrac")
+ps.adonis <- adonis(dist.uf ~ SampleType, data = metadata, perm=9999)
+i="bray"
+RELPhOnlyClean10 %>%
+  phyloseq::distance(method = i) ->  dist
+
+mctoolsr::calc_pairwise_permanovas(dist, sampledf, "data.frame", Animal)
+
+i="bray"
+physeq %>%
+  phyloseq::distance(method = i) ->  dist
+
+mctoolsr::calc_pairwise_permanovas(dist, as(sample_data(physeq), "data.frame"), VAR_NAME)
+
+dm = calc_dm(fruits_veggies$data_loaded)
+calc_pairwise_permanovas(dm, fruits_veggies$map_loaded, "Sample_type")
+
+### try to add circles
+allGroupsColors <- c( "#f49f98","#E94032", "#c0ccfc",  "#414c7d", "#d59ed9", "#AC3DB4")
+wunifrac_dist = phyloseq::distance(RELPhOnlyClean10, method="bray", weighted=F)
+ordination = ordinate(RELPhOnlyClean10, method="PCoA", distance=wunifrac_dist)
+plotbeta <- plot_ordination(RELPhOnlyClean10, ordination, color="Microbiome_Type") + theme_classic(30)
+plotbeta <- plotbeta + geom_point( size = 3)+ scale_color_manual(values = allGroupsColors)
+plotbeta +stat_ellipse( level = 0.95, type="t")
+
+
+
+map.df <- data.frame(sample_data(RELPhOnlyClean10))
+ordiellipse(wunifrac_dist, map.df$Microbiome_Type,label=TRUE,conf=0.99,col="brown") 
+
+cex=0.7
+
+
+#remotes::install_github("corybrunson/ordr")
+#library(ordr)
+#detach("package:ordr", unload=TRUE)
+
+###
+data(enterotype)
+# simplify the data
+enterotype = subset_samples(enterotype, !is.na(Enterotype))
+enterotype = subset_samples(enterotype, SeqTech!="Sanger")
+
+
+
+expt = prune_taxa(names(sort(taxa_sums(enterotype), TRUE)[1:50]), enterotype)
+ord = ordinate(expt~Enterotype, "CCA", "bray")
+(ordplot <- plot_ordination(expt, ord, "samples", color="Enterotype",shape="SeqTech"))
+
+# get data from the plotted ordination. Not strictly necessary but can be useful
+orddata <- ordplot$data
+# get map out of phyloseq object 
+map.df <- data.frame(sample_data(expt))
+# make a blank plot
+plot(x=orddata$CCA1, y=orddata$CCA2,type="n") 
+# plot the points for each type
+points(ord, disp="si", cex = 0.5, col=map.df$Enterotype,pch=19)
+# draw ellipses
+ordiellipse(ord, map.df$SeqTech,label=TRUE,cex=0.7,conf=0.99,col="brown") 
+# add a legend
+legend("bottomleft", inset=c(-0.0,0), legend=levels(map.df$Enterotype), bty = "n", col = levels(map.df$Enterotype), pch = 19, title="Enterotype")
+
+### my own, what does the 1:50 do in this?
+expt = prune_taxa(names(sort(taxa_sums(RELPhOnlyClean10), TRUE)[1:50]), RELPhOnlyClean10)
+ord = ordinate(expt~Animal, "CCA", "bray")
+(ordplot <- plot_ordination(expt, ord, "samples", color="Microbiome_Type"))
+orddata <- ordplot$data
+map.df <- data.frame(sample_data(expt))
+plot(x=orddata$CCA1, y=orddata$CCA2,type="n") 
+# plot the points for each type
+points(ord, disp="si", cex = 0.5, col=map.df$Microbiome_Type,pch=19)
+# draw ellipses
+ordiellipse(ord, map.df$Microbiome_Type,label=TRUE,cex=0.7,conf=0.99,col="brown") 
+# add a legend
+legend("bottomleft", inset=c(-0.0,0), legend=levels(map.df$Microbiome_Type), bty = "n", col = levels(map.df$Microbiome_Type), pch = 19, title="Microbiome_Type")
+
+
+
+####### R16 alpha diveisty#####
+setwd("~/Desktop/ExternalMicrobiome/New16s made in R")
+
+
+##Import into R
+#otu table
+RawOtu <- read.table("16byreplicatewithexternaldeletedirynoheader.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+RawOtu <- RawOtu[,order(colnames(RawOtu))]
+#taxnomy strings
+taxmat <- read.table("tax.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+#mapping file 
+mapping <- read.table("mapingfileExternalNotDirty.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+##Import into phyloseq
+#otu table
+onlyOTU <- as.matrix(RawOtu)
+otu_sub  <- otu_table(onlyOTU, taxa_are_rows = T)
+#taxnomy strings
+t_tax <- as.matrix(taxmat)
+tax_sub = tax_table(t_tax)
+#mapping file
+metadata <- sample_data(mapping)
+
+filename <- "rootedtree.nwk"
+#filename <- "18stree.nwk"
+rootedtree <- ape::read.tree(filename)
+#confirm rooted
+is.rooted(rootedtree)
+
+
+##Create phyloseq object
+PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub,rootedtree)
+PhUnmodifed <-prune_samples(sample_sums(PhUnmodifed)>=10, PhUnmodifed)
+#Remove non bacteral reads
+PhOnlyBac <- subset_taxa(PhUnmodifed, Domain=="Bacteria")
+
+library(phyloseq)
+library(agricolae)
+library(tidyverse)
+library(lme4)
+library(lmerTest)
+library(glmmTMB)
+library(emmeans)
+library(car)
+library(MuMIn)
+library(agridat)
+library(DHARMa)
+library(viridis)
+library(hillR)
+library(GGally)
+library(lavaan)
+
+
+#This is your modified phyloseq object from above (with tree)
+PhOnlyClean10 <- PhOnlyBac
+
+#Export the out table
+dat3= as(otu_table(PhOnlyClean10), "matrix")
+#Transform and make into a dataframe
+dat3t2 <- as.data.frame(t(dat3))
+head(dat3t2)
+
+#Make dataframe to put your results into
+otu_BF_div <- dat3t2[1:1]
+
+#Calcualte hill numbers
+otu_BF_div$rich <- hill_taxa(dat3t2, q=0)                                                                                               
+otu_BF_div$shan <- hill_taxa(dat3t2, q=1)                                                                                               
+otu_BF_div$simp <- hill_taxa(dat3t2, q=2)
+
+#Remove that first collum of junk
+otu_BF_div[1] <- NULL
+
+#your final results
+otu_BF_div
+
+write.csv(otu_BF_div,'AlphaR16s.csv')
+
+
+
+#Hill Numbers PD
+otu_BF_div
+
+otu_BF_div <- dat3t2[1:1]
+
+
+tree1 = phy_tree(PhOnlyClean10)
+otu_BF_div$faith <- hill_phylo(dat3t2,tree1, q=0)          
+
+write.csv(otu_BF_div,'AlphaR16sFaith.csv')
+
+###################### R16 alpha graphs##########
+setwd("~/Desktop/ExternalMicrobiome/New16s made in R")
+AlphaForPhilNoUncultWithMetadata <- read.csv("FinalAlpha16s.csv")
+alphadata <- AlphaForPhilNoUncultWithMetadata
+
+alphadata$MicrobiomeType <- factor(alphadata$MicrobiomeType,levels = c( "Eudorylaimusexternal","Eudorylaimusinternal", 
+                                                                        "Plectusexternal", "Plectusinternal",  "Tardigradeexternal","Tardigradeinternal"))
+
+
+
+#Shannon
+p <- ggplot(alphadata, aes(x=MicrobiomeType, y=shan,fill=MicrobiomeType, pattern = Treatment ))  + geom_boxplot_pattern( color = "black", pattern_fill = "black", pattern_density = 0.1, pattern_spacing = 0.025, pattern_key_scale_factor = 0.6) + scale_pattern_manual(values = c(Internal = "none", External = "circle"))
+p <- p +theme_classic(15,) + ylab("Shannon Diversity Index (Hill Numbers)") + theme(axis.title.x=element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+Shannon <- p  + scale_fill_manual(values=c("#FC1520","#FC1520", "#7d98ff","#7d98ff", "#BB28BA", "#BB28BA")) + theme(axis.text.x = element_text(angle = 0)) +scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))  + theme(legend.position = "none") +scale_y_continuous(limits = c(0,100), expand = c(0,0))
+Shannon
+
+#Simpsons
+p <- ggplot(alphadata, aes(x=MicrobiomeType, y=simp,fill=MicrobiomeType, pattern = Treatment ))  + geom_boxplot_pattern(color = "black", pattern_fill = "black", pattern_density = 0.1, pattern_spacing = 0.025, pattern_key_scale_factor = 0.6) + scale_pattern_manual(values = c(Internal = "none", External = "circle"))
+p <- p +theme_classic(15,) + ylab("Simpsons Diversity Index (Hill Numbers)") + theme(axis.title.x=element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+Simpsons <- p + scale_fill_manual(values=c( "#FC1520","#FC1520", "#7d98ff","#7d98ff", "#BB28BA", "#BB28BA")) + theme(axis.text.x = element_text(angle = 0)) +scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))    + theme(legend.position = "none") +scale_y_continuous(limits = c(0,40), expand = c(0,0))
+Simpsons
+
+#Faiths
+p <- ggplot(alphadata, aes(x=MicrobiomeType, y=faith,fill=MicrobiomeType, pattern = Treatment ))  + geom_boxplot_pattern( color = "black", pattern_fill = "black", pattern_density = 0.1, pattern_spacing = 0.025, pattern_key_scale_factor = 0.6)+ scale_pattern_manual(values = c(Internal = "none", External = "circle"))
+p <- p +theme_classic(15,) + ylab("Faith's Phylogentic Diversity (Hill Numbers)") + theme(axis.title.x=element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+Faith <- p + scale_fill_manual(values=c( "#FC1520","#FC1520", "#7d98ff","#7d98ff", "#BB28BA", "#BB28BA")) + theme(axis.text.x = element_text(angle = 0))+scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))   + theme(legend.position = "none") +scale_y_continuous(limits = c(0,40), expand = c(0,0))
+Faith
+
+#Richness
+p <- ggplot(alphadata, aes(x=MicrobiomeType, y=rich,fill=MicrobiomeType, pattern = Treatment ))  + geom_boxplot_pattern( color = "black", pattern_fill = "black", pattern_density = 0.1, pattern_spacing = 0.025, pattern_key_scale_factor = 0.6) + scale_pattern_manual(values = c(Internal = "none", External = "circle"))
+p <- p +theme_classic(15,) + ylab("ASV Richness") + theme(axis.title.x=element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+Rich <- p + scale_fill_manual(values=c( "#FC1520","#FC1520", "#7d98ff","#7d98ff", "#BB28BA", "#BB28BA")) + theme(axis.text.x = element_text(angle = 0)) +scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))    + theme(legend.position = "none") +scale_y_continuous(limits = c(0,900), expand = c(0,0))
+Rich
+
+Figure1 <- ggarrange(Shannon, Rich, Faith, Simpsons, labels = c("a.",  "b.", "c.", "d."), ncol = 2, nrow = 2)
+Figure1
+
+
+#### SAME THING BUYT NOW THE NEW COLORS AND CUT SHANNON
+
+#Simpsons
+p <- ggplot(alphadata, aes(x=MicrobiomeType, y=simp,fill=MicrobiomeType ))  + geom_boxplot()
+p <- p +theme_classic(15,) + ylab("Simpsons Diversity Index\n(Hill Numbers)") + theme(axis.title.x=element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+Simpsons <- p + scale_fill_manual(values=c( "#FF0000","#FFBB00", "#4800FF", "#00FDFF",  "#74007D" ,"#E500FF")) + theme(axis.text.x = element_text(angle = 0)) +scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))    + theme(legend.position = "none") +scale_y_continuous(limits = c(0,40), expand = c(0,0))
+Simpsons
+
+#Faiths
+p <- ggplot(alphadata, aes(x=MicrobiomeType, y=faith,fill=MicrobiomeType)) + geom_boxplot()
+p <- p +theme_classic(15,) + ylab("Faith's Phylogentic Diversity\n(Hill Numbers)") + theme(axis.title.x=element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+Faith <- p + scale_fill_manual(values=c( "#FF0000","#FFBB00", "#4800FF", "#00FDFF",  "#74007D" ,"#E500FF")) + theme(axis.text.x = element_text(angle = 0))+scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))   + theme(legend.position = "none") +scale_y_continuous(limits = c(0,40), expand = c(0,0))
+Faith
+
+#Richness
+p <- ggplot(alphadata, aes(x=MicrobiomeType, y=rich,fill=MicrobiomeType ))   + geom_boxplot()
+p <- p +theme_classic(15,) + ylab("ASV Richness") + theme(axis.title.x=element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+Rich <- p + scale_fill_manual(values=c( "#FF0000","#FFBB00", "#4800FF", "#00FDFF",  "#74007D" ,"#E500FF")) + theme(axis.text.x = element_text(angle = 0)) +scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))    + theme(legend.position = "none") +scale_y_continuous(limits = c(0,900), expand = c(0,0))
+Rich
+
+FigureSIE <- ggarrange(Rich, Faith, Simpsons, labels = c("A.",  "B.", "C."), ncol = 1, nrow = 3)
+FigureSIE
+
+
+
+###################### R16 alpha stats##########
+setwd("~/Desktop/ExternalMicrobiome/New16s made in R")
+AlphaForPhilNoUncultWithMetadata <- read.csv("FinalAlpha16s.csv")
+alphastats <- AlphaForPhilNoUncultWithMetadata
+
+
+head(alphastats)
+
+### statistics for each 
+glm1 <- glm(shan~ Animal*Treatment, data=alphastats, family=gaussian())
+Anova(glm1, type=2) 
+sim_glm1 <- simulateResiduals(fittedModel = glm1, n = 250)
+plot(sim_glm1)
+summary(glm1)
+
+#shannon connected letters
+alphastats$Type= as.factor(alphastats$Type)
+
+glm1 <- glm(shan~ Type, data=alphastats, family=gaussian())
+summary(glm1)
+rsq(glm1)
+ph <- glht(glm1, mcp(Type = "Tukey"))
+cld(ph)
+
+
+mm2 <- lmer(shan ~ Animal*Treatment+(1|Stream/Mat_Type), data=alphastats)
+anova(mm2, ddf="Kenward-Roger")
+summary(mm2)
+
+mm2 <- lm(shan ~ Animal*Treatment*Mat_Type, data=alphastats)
+anova(mm2)
+summary(mm2)
+
+#is this one the best?
+mm2 <- lm(shan ~ Animal*Treatment+Mat_Type+Stream, data=alphastats)
+anova(mm2)
+summary(mm2)
+
+
+mm2 <- lmer(shan ~ Animal*Treatment+Mat_Type+Stream+(1|Mat_Replicate/Animal), data=alphastats)
+anova(mm2, ddf="Kenward-Roger")
+summary(mm2)
+
+
+#best based on anova table, estiamte is effect size
+emmeans(mm2,pairwise~Treatment)
+
+
+emmeans(mm2,pairwise~Treatment:Animal)
+emmeans(mm2,pairwise~Treatment|Animal)
+
+#cant do stream as random because only 4 
+#confirm output look at DD is high
+
+
+mm2 <- lmer(shan ~ Treatment*Mat_Type+Stream+(1|Mat_Replicate/Animal), data=alphastats%>%filter(Animal=="Plectus"))
+anova(mm2, ddf="Kenward-Roger")
+summary(mm2)
+
+how post hoc emenans
+
+
+
+##### best models end of meeting
+#accounrs for animal within mats, and differences betwene streams as a fixed effect
+
+
+#either this or above and itnerpute p value difient, either one then poresent stats trasnmater 
+mm2 <- lmer(shan ~ Animal*Treatment*Mat_Type+Stream+(1|Mat_Replicate/Animal), data=alphastats)
+anova(mm2, ddf="Kenward-Roger")
+
+
+
+#best based on anova table, estiamte is effect size
+emmeans(mm2,pairwise~Treatment)
+#all 3 anomals respodned simialr in direciton and magnaet, in avearge change of 13 shannon with sigcian of 0.03P
+
+emmeans(mm2,pairwise~Treatment|Animal)
+#: is all possible comaprison inclduing non biolical interst (plectus intenral to tardigre extarnl) the bar is contracts within level 
+
+
+emmeans(mm2,pairwise~Animal)
+
+
+
+#### this is the one
+mm2 <- lmer(faith ~ Animal*Treatment*Mat_Type+Stream+(1|Mat_Replicate/Animal), data=alphastats)
+anova(mm2, ddf="Kenward-Roger")
+emmeans(mm2,pairwise~Treatment)
+emmeans(mm2,pairwise~Treatment|Animal)
+
+
+### final final  16s alpha R16
+m <- lmer(rich ~ Animal*Treatment*Mat_Type+Stream+(1|Mat_Replicate/Animal), data=alphastats)
+anova(m, ddf="Kenward-Roger")
+emmeans(m,pairwise~Treatment)
+emmeans(m,pairwise~Treatment|Animal)
+emmeans(m,pairwise~Animal)
+
+
+setwd("~/Desktop/ExternalMicrobiome/New16s made in R")
+AlphaForPhilNoUncultWithMetadata <- read.csv("FinalAlpha16sWithMats.csv")
+alphastats <- AlphaForPhilNoUncultWithMetadata
+m <- lm(simp ~ MatvsAnimals, data=alphastats)
+anova(m)
+emmeans(m,pairwise~MatvsAnimals)
+
+#run this 18s into above
+FinalAlpha18swithmats <- read_csv("~/Desktop/ExternalMicrobiome/New18s made in R/Eventhough it says 16s is actually 18s I misslabeld but correct/FinalAlpha18swithmats.csv")
+alphastats <- FinalAlpha18swithmats
+
+
+#### Figure 1, 16s alpha and beta #####
+setwd("~/Desktop/ExternalMicrobiome/New16s made in R")
+AlphaForPhilNoUncultWithMetadata <- read.csv("FinalAlpha16s.csv")
+alphadata <- AlphaForPhilNoUncultWithMetadata
+
+alphadata$MicrobiomeType <- factor(alphadata$MicrobiomeType,levels = c( "Eudorylaimusexternal","Eudorylaimusinternal", 
+                                                                        "Plectusexternal", "Plectusinternal",  "Tardigradeexternal","Tardigradeinternal"))
+
+
+
+#Shannon
+p <- ggplot(alphadata, aes(x=MicrobiomeType, y=shan,fill=MicrobiomeType ))  + geom_boxplot(color = "black") 
+p <- p +theme_classic(15) + ylab("Shannon Diversity Index of Bacterial Communities\n(Hill Numbers) ") + theme(axis.title.x=element_blank(), axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+Shannon <- p  + scale_fill_manual(name="", values=c("#FF0000","#FFBB00", "#4800FF", "#00FDFF",  "#74007D" ,"#E500FF"), labels=c("Eudorylaimus External","Eudorylaimus Internal",  "Plectus External",   "Plectus Internal",  "Tardigrade External","Tardigrade Internal")) + theme(axis.text.x = element_text(angle = 0))+ theme(legend.position = "bottom") +scale_x_discrete(labels = c('External', 'Internal', 'External', 'Internal','External', 'Internal'))   +scale_y_continuous(limits = c(0,75), expand = c(0,0))
+Shannon
+my_legend <- get_legend(Shannon)
+ShannonLeg<- as_ggplot(my_legend)
+ShannonLeg
+Shannon <- Shannon + theme(legend.position = "none")
+Shannon
+
+
+setwd("~/Desktop/ExternalMicrobiome/New16s made in R")
+
+WORK HERE
+##Import into R
+#otu table
+
+
+RawOtu <- read.table("16byreplicatewithexternaldeletedirynoheader.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+
+#RawOtu <- read.table("16byreplicatewithexternaldeletedirynoheadeonly119.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+RawOtu <- RawOtu[,order(colnames(RawOtu))]
+#taxnomy strings
+taxmat <- read.table("tax.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+#mapping file 
+mapping <- read.table("mapingfileExternalNotDirty.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+##Import into phyloseq
+#otu table
+onlyOTU <- as.matrix(RawOtu)
+otu_sub  <- otu_table(onlyOTU, taxa_are_rows = T)
+#taxnomy strings
+t_tax <- as.matrix(taxmat)
+tax_sub = tax_table(t_tax)
+#mapping file
+metadata <- sample_data(mapping)
+
+
+
+##Create phyloseq object
+PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub)
+PhUnmodifed <-prune_samples(sample_sums(PhUnmodifed)>=10, PhUnmodifed)
+#Remove non bacteral reads
+PhOnlyBac <- subset_taxa(PhUnmodifed, Domain=="Bacteria")
+
+RELPhOnlyClean10 <- transform_sample_counts(PhOnlyBac, function(x) x / sum(x))
+#RELPhOnlyClean10 <-subset_samples(PhOnlyBac, Animal!="Mat")
+RELPhOnlyClean10 <-subset_samples(RELPhOnlyClean10, Animal!="Mat")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_064")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_111")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_118")
+
+sample_data(RELPhOnlyClean10)$Microbiome_Type <- factor(sample_data(RELPhOnlyClean10)$Microbiome_Type,levels = c( "Eudorylaimusexternal","Eudorylaimusclean", 
+                                                                                                                  "Plectusexternal", "Plectusclean",  "Tardigradeexternal","Tardigradeclean"))
+#allGroupsColors <- c( "#E94032","#f49f98", "#414c7d", "#c0ccfc",  "#AC3DB4" ,"#d59ed9")
+
+
+
+#RELPhOnlyClean10 <- tax_glom(RELPhOnlyClean10, "Genus")
+allGroupsColors <- c( "#FF0000","#FFBB00", "#4800FF", "#00FDFF",  "#74007D" ,"#E500FF")
+wunifrac_dist = phyloseq::distance(RELPhOnlyClean10, method="bray", weighted=F)
+#wunifrac_dist = phyloseq::distance(RELPhOnlyClean10, method="jaccard", binary = TRUE)
+ordination = ordinate(RELPhOnlyClean10, method="PCoA", distance=wunifrac_dist)
+plotbeta <- plot_ordination(RELPhOnlyClean10, ordination, color="Microbiome_Type") + theme_classic(15) + theme(axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+plotbeta <- plotbeta + xlab("NMDS 1") + ylab("NMDS 2")+ theme(legend.position = "bottom")+ geom_point( size = 3)+ scale_color_manual(name= "", values = allGroupsColors,labels=c("Eudorylaimus External","Eudorylaimus Internal",  "Plectus External",   "Plectus Internal",  "Tardigrade External","Tardigrade Internal"))
+plotbeta
+plotbeta <- plotbeta + stat_ellipse( level = 0.008, type="euclid") +coord_fixed(ratio = 1)
+plotbeta
+my_legend <- get_legend(plotbeta)
+plotbetaleg<- as_ggplot(my_legend)
+plotbetaleg
+plotbeta <- plotbeta + theme(legend.position = "none")
+plotbeta
+
+
+Figure1s <- ggarrange(Shannon,plotbeta, ncol = 2, nrow = 1, widths = c(1,1), labels = c("A.",  "B."))
+Figure1s
+
+Figure1final <- ggarrange(Figure1s,plotbetaleg, ncol = 1, nrow = 2, heights = c(1,.2))
+Figure1final
+
+
+#permovas stats june 29
+sampledf <- data.frame(sample_data(RELPhOnlyClean10))
+adonis(wunifrac_dist ~ Animal * Treatment * Mat_Type + StreamName, data = sampledf, permutations = 9999)
+
+
+### split by treatment
+RELPhOnlyClean10External <- subset_samples(RELPhOnlyClean10, Treatment=="External")
+wunifrac_dist = phyloseq::distance(RELPhOnlyClean10External, method="bray", weighted=F)
+ordination = ordinate(RELPhOnlyClean10External, method="PCoA", distance=wunifrac_dist)
+sampledf <- data.frame(sample_data(RELPhOnlyClean10External))
+adonis( wunifrac_dist ~ Animal * Mat_Type + StreamName, data = sampledf, permutations = 9999)
+
+RELPhOnlyClean10Internal <- subset_samples(RELPhOnlyClean10, Treatment=="Internal")
+wunifrac_dist = phyloseq::distance(RELPhOnlyClean10Internal, method="bray", weighted=F)
+ordination = ordinate(RELPhOnlyClean10Internal, method="PCoA", distance=wunifrac_dist)
+sampledf <- data.frame(sample_data(RELPhOnlyClean10Internal))
+adonis( wunifrac_dist ~ Animal * Mat_Type + StreamName, data = sampledf, permutations = 9999)
+
+
+
+
+###### dispetion of that beta diverty in figure 1#########
+#wunifrac_dist = phyloseq::distance(RELPhOnlyClean10, method="bray", weighted=F)
+#ordination = ordinate(RELPhOnlyClean10, method="PCoA", distance=wunifrac_dist)
+#plotbeta <- plot_ordination(RELPhOnlyClean10, ordination, color="Microbiome_Type")
+
+jaccard_45 = phyloseq::distance(RELPhOnlyClean10, method="bray", weighted=F)
+
+df_45 <- as(sample_data(RELPhOnlyClean10), "data.frame")
+
+groups <- df_45[["Microbiome_Type"]]
+groups
+
+mod <- betadisper(jaccard_45, bias.adjust=F, groups)
+mod
+df <- data.frame(Distance_to_centroid=mod$distances,Group=mod$group)
+df
+
+write.csv(df,'betadisperformetadataPOSTOUTLIERS.csv')
+
+AlphaForPhilNoUncultWithMetadata <- read.csv("betadisperwithmetadata.csv")
+alphadata <- AlphaForPhilNoUncultWithMetadata
+m <- lmer(Distance_to_centroid ~ Animal*Treatment*Mat_Type+Stream+(1|Mat_Replicate/Animal), data=alphadata)
+head(alphadata)
+anova(m, ddf="Kenward-Roger")
+emmeans(m,pairwise~Treatment)
+emmeans(m,pairwise~Treatment|Animal)
+emmeans(m,pairwise~Animal)
+emmeans(m,pairwise~Stream)
+
+
+####### SI figure R16 beta with mats#####
+
+
+setwd("~/Desktop/ExternalMicrobiome/New16s made in R")
+
+
+##Import into R
+#otu table
+RawOtu <- read.table("16byreplicatewithexternaldeletedirynoheaderwithmats.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+RawOtu <- RawOtu[,order(colnames(RawOtu))]
+#taxnomy strings
+taxmat <- read.table("tax.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+#mapping file 
+mapping <- read.table("mapingfileExternalNotDirty.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+##Import into phyloseq
+#otu table
+onlyOTU <- as.matrix(RawOtu)
+otu_sub  <- otu_table(onlyOTU, taxa_are_rows = T)
+#taxnomy strings
+t_tax <- as.matrix(taxmat)
+tax_sub = tax_table(t_tax)
+#mapping file
+metadata <- sample_data(mapping)
+
+##Create phyloseq object
+PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub)
+PhUnmodifed <-prune_samples(sample_sums(PhUnmodifed)>=10, PhUnmodifed)
+#Remove non bacteral reads
+PhOnlyBac <- subset_taxa(PhUnmodifed, Domain=="Bacteria")
+
+#PhOnlyBac <- transform(PhOnlyBac, 'hellinger')
+
+#RELPhOnlyClean10 <- PhOnlyBac
+RELPhOnlyClean10 <- transform_sample_counts(PhOnlyBac, function(x) x / sum(x))
+sample_data(RELPhOnlyClean10)$Microbiome_Type <- factor(sample_data(RELPhOnlyClean10)$Microbiome_Type,levels = c("Matmat",  "Eudorylaimusexternal","Eudorylaimusclean", 
+                                                                                                                  "Plectusexternal", "Plectusclean",  "Tardigradeexternal","Tardigradeclean"))
+#allGroupsColors <- c( "#E94032","#f49f98", "#414c7d", "#c0ccfc",  "#AC3DB4" ,"#d59ed9")
+
+
+
+allGroupsColors <- c("#97d700",  "#FF0000","#FFBB00", "#4800FF", "#00FDFF",  "#74007D" ,"#E500FF")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_064")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_111")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_118")
+wunifrac_dist = phyloseq::distance(RELPhOnlyClean10, method="bray", weighted=F)
+#wunifrac_dist = phyloseq::distance(RELPhOnlyClean10, method="jaccard", binary = TRUE)
+ordination = ordinate(RELPhOnlyClean10, method="NMDS", distance=wunifrac_dist)
+plotbeta <- plot_ordination(RELPhOnlyClean10, ordination, color="Microbiome_Type") + theme_classic(15) + theme( axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+plotbeta <- plotbeta + theme(legend.position = "bottom")+ geom_point( size = 3)+ scale_color_manual(name= "", values = allGroupsColors,labels=c("Mat", "Eudorylaimus External","Eudorylaimus Internal",  "Plectus External",   "Plectus Internal",  "Tardigrade External","Tardigrade Internal"))
+plotbeta
+plotbeta <- plotbeta + stat_ellipse( level = 0.010, type="euclid") +coord_fixed(ratio = 1)
+plotbeta
+my_legend <- get_legend(plotbeta)
+plotbetaleg<- as_ggplot(my_legend)
+plotbetaleg
+plotbeta <- plotbeta + theme(legend.position = "none")
+plotbeta
+########R18 alpha stats#####
+
+setwd("~/Desktop/ExternalMicrobiome/New18s made in R/Eventhough it says 16s is actually 18s I misslabeld but correct")
+AlphaForPhilNoUncultWithMetadata <- read.csv("HillNumbersExternalInternal18sWithMetadataNoMats.csv")
+alphadata <- AlphaForPhilNoUncultWithMetadata
+
+
+
+
+m <- lmer(faith ~ Animal*Treatment*Mat_Type+Stream+(1|Mat_Replicate/Animal), data=alphadata)
+anova(m, ddf="Kenward-Roger")
+emmeans(m,pairwise~Treatment)
+emmeans(m,pairwise~Treatment|Animal)
+emmeans(m,pairwise~Animal)
+
+p <- list.functions.in.file("ForL.R")
+p
+
+the 16s ones for any with animal
+
+
+###########R18 by animal import and graph and do stacked realtive abduance######
+setwd("~/Desktop/ExternalMicrobiome/New18s made in R/Eventhough it says 16s is actually 18s I misslabeld but correct")
+
+
+RawOtu <- read.table("16byAnimalFinalFinal.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+RawOtu <- RawOtu[,order(colnames(RawOtu))]
+#taxnomy strings
+taxmat <- read.table("tax.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+
+#mapping file 
+mapping <- read.table("mapingfileExternalNotDirty.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+
+
+
+##Import into phyloseq
+#otu table
+#newotu
+#onlyOTU <- as.matrix(newotu)
+onlyOTU <- as.matrix(RawOtu)
+otu_sub  <- otu_table(onlyOTU, taxa_are_rows = T)
+#taxnomy strings
+t_tax <- as.matrix(taxmat)
+tax_sub = tax_table(t_tax)
+#mapping file
+metadata <- sample_data(mapping)
+
+##Create phyloseq object, the tree does not work with the !=command
+PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub)
+
+
+
+
+### by large table NO LONGER USE THIS
+ph4 <- PhUnmodifed
+ph4 <-prune_samples(sample_sums(ph4)>=1, ph4)
+ps<- transform_sample_counts(ph4, function(x) x / sum(x))
+ps <- tax_glom(ps, "Table")
+ps2 <- transform_sample_counts(ps, function(x) x / sum(x))
+plot_bar(ps2)
+dat2 <- data.table(psmelt(ps2))
+# convert Phylum to a character vector from a factor because R
+dat2$Table <- as.character(dat2$Table)
+# group dataframe by Phylum, calculate median rel. abundance
+dat2[, median := median(Abundance, na.rm = TRUE), 
+     by = "Table"]
+# Change name to remainder of Phylum less than 1%
+
+onlyPhormidium <- dat2[dat2$Table == 'MiscEuk']
+onlyPhormidium$median <- 30
+noPhormidium <- dat2[dat2$Table != 'MiscEuk']
+dat2 <- rbind(onlyPhormidium, noPhormidium)
+
+dat2[(median >= 0.5), Table := "Other Eukaryotes"]
+
+
+write.csv(dat2,'dat2phylum.csv')
+
+dat2$Sample <- factor(dat2$Sample, levels = c(
+  "E_16s_140", "E_16s_001","P_16s_004", "P_16s_001", "T_16s_009", "T_16s_001"
+  
+))
+palette <- c( "#8A94D9", "#DCB274", "#89DCA6", "#B2E25C", "#E18CB7", "#B6D5D5", "#BA54D9") 
+palette
+
+#palette <- distinctColorPalette(7)
+
+#put other phyla at top
+dat2$Table <- factor(dat2$Table, levels = c(
+  "Other Eukaryotes", 
+  "Fungi",
+  "Archaeplastida", 
+  "Nematode", 
+  "Metazoans "
+))
+
+### Plot graph without dots
+edes2 <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = Table,pattern = Treatment))  + guides(fill = guide_legend(reverse = TRUE))  + geom_bar( stat = "identity") +  theme_classic(15) +
+    scale_fill_manual(values=palette,labels=c("Other Eukaryotes","Fungi",  "Archaeplastida",   "Non-Host Nematoda",  "Non-Host Metazoa"))  + theme(legend.position="bottom", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+edes2 
+Table <- edes2  + guides(fill = guide_legend(reverse = TRUE)) +scale_x_discrete( labels = c( 'External', 'Internal', 'External', 'Internal', 'External', 'Internal'))
+Table
+
+
+##########By C################
+ph4 <- PhUnmodifed
+ph4 <-prune_samples(sample_sums(ph4)>=1, ph4)
+ps<- transform_sample_counts(ph4, function(x) x / sum(x))
+ps <- tax_glom(ps, "c")
+ps2 <- transform_sample_counts(ps, function(x) x / sum(x))
+plot_bar(ps2)
+dat2 <- data.table(psmelt(ps2))
+# convert Phylum to a character vector from a factor because R
+dat2$c <- as.character(dat2$c)
+# group dataframe by Phylum, calculate median rel. abundance
+dat2[, median := median(Abundance, na.rm = TRUE), 
+     by = "c"]
+# Change name to remainder of Phylum less than 1%
+
+#onlyPhormidium <- dat2[dat2$Table == 'MiscEuk']
+#onlyPhormidium$median <- 30
+#noPhormidium <- dat2[dat2$Table != 'MiscEuk']
+#dat2 <- rbind(onlyPhormidium, noPhormidium)
+
+dat2[(median <= 0.005), c := "Other Eukaryotes"]
+
+
+write.csv(dat2,'dat2phylum.csv')
+
+dat2$Sample <- factor(dat2$Sample, levels = c(
+  "E_16s_140", "E_16s_001","P_16s_004", "P_16s_001", "T_16s_009", "T_16s_001"
+  
+))
+palette <- c( "#DF9085", "#ACA2D5" ,"#A2D7C9" ,"#D9D067", "#7DE474" ,"#C35CD2") 
+palette
+
+#palette <- distinctColorPalette(6)
+
+
+dat2$c <- factor(dat2$c, levels = c(
+"Other Eukaryotes", 
+" __Chloroplastida",
+ " __Fungi", 
+" __Rhizaria",
+ " __Stramenopiles", 
+ " __Metazoa"
+))
+
+
+### Plot graph without dots
+edes2 <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = c,pattern = Treatment))  + guides(fill = guide_legend(reverse = TRUE))+ guides(fill = guide_legend(reverse = TRUE))  + geom_bar( stat = "identity") +  theme_classic(15) +
+  scale_fill_manual(values=palette,labels=c( "Other Eukaryotes", "Chloroplastida","Fungi", "Rhizaria","Stramenopiles", "Metazoa"))  + theme(legend.position="bottom", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+edes2 
+cc <- edes2  +scale_x_discrete( labels = c( 'External', 'Internal', 'External', 'Internal', 'External', 'Internal'))
+cc
+
+
+
+
+##### only metaxoan 
+ph4 <- PhUnmodifed
+ph4 <-prune_samples(sample_sums(ph4)>=1, ph4)
+ps<- transform_sample_counts(ph4, function(x) x / sum(x))
+ps <- tax_glom(ps, "d")
+ps2 <- transform_sample_counts(ps, function(x) x / sum(x))
+ps2 <- subset_taxa(ps2, c==" __Metazoa")
+plot_bar(ps2)
+dat2 <- data.table(psmelt(ps2))
+# convert Phylum to a character vector from a factor because R
+dat2$d <- as.character(dat2$d)
+# group dataframe by Phylum, calculate median rel. abundance
+dat2[, median := median(Abundance, na.rm = TRUE), 
+     by = "d"]
+# Change name to remainder of Phylum less than 1%
+
+#onlyPhormidium <- dat2[dat2$Table == 'MiscEuk']
+#onlyPhormidium$median <- 30
+#noPhormidium <- dat2[dat2$Table != 'MiscEuk']
+#dat2 <- rbind(onlyPhormidium, noPhormidium)
+
+dat2[(median >= 0.5), d := "Other BN"]
+
+
+write.csv(dat2,'dat2phylum.csv')
+
+dat2$Sample <- factor(dat2$Sample, levels = c(
+  "E_16s_140", "E_16s_001","P_16s_004", "P_16s_001", "T_16s_009", "T_16s_001"
+  
+))
+palette <- c( "#BB6AD2" ,"#AACAD7", "#ABDF84" ,"#DA9B7C") 
+palette
+#palette <- distinctColorPalette(4)
+#palette <- distinctColorPalette(4)
+
+#put other phyla at top
+#dat2$Table <- factor(dat2$Table, levels = c(
+ 
+# "Other Eukaryotes", 
+ # "Fungi",
+#  "Archaeplastida", 
+ # "Nematode", 
+#  "Metazoans "
+#))
+
+### Plot graph without dots
+edes2 <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = d,pattern = Treatment))  + guides(fill = guide_legend(reverse = TRUE))  + geom_bar( stat = "identity") +  theme_classic(15) + theme(legend.position="bottom", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Metazoan Phyla') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+edes2 
+Metzaons <- edes2 +scale_fill_manual(values=palette,labels=c( "Nematoda","Rotifera","Tardigrada"))  + guides(fill = guide_legend(reverse = TRUE)) +scale_x_discrete( labels = c( 'External', 'Internal', 'External', 'Internal', 'External', 'Internal'))
+Metzaons
+
+
+##### only fungi by d
+ph4 <- PhUnmodifed
+ph4 <-prune_samples(sample_sums(ph4)>=1, ph4)
+ps<- transform_sample_counts(ph4, function(x) x / sum(x))
+ps <- tax_glom(ps, "d")
+ps2 <- transform_sample_counts(ps, function(x) x / sum(x))
+ps2 <- subset_taxa(ps2, c==" __Fungi")
+plot_bar(ps2)
+dat2 <- data.table(psmelt(ps2))
+# convert Phylum to a character vector from a factor because R
+dat2$d <- as.character(dat2$d)
+# group dataframe by Phylum, calculate median rel. abundance
+dat2[, median := median(Abundance, na.rm = TRUE), 
+     by = "d"]
+# Change name to remainder of Phylum less than 1%
+
+onlyPhormidium <- dat2[dat2$d == ' __Archaeorhizomyces']
+onlyPhormidium$median <- 30
+noPhormidium <- dat2[dat2$d != ' __Archaeorhizomyces']
+dat2 <- rbind(onlyPhormidium, noPhormidium)
+
+onlyPhormidium <- dat2[dat2$d == ' __Nucletmycea']
+onlyPhormidium$median <- 30
+noPhormidium <- dat2[dat2$d != ' __Nucletmycea']
+dat2 <- rbind(onlyPhormidium, noPhormidium)
+
+dat2[(median >= 0.5), d := "Other Fungi"]
+
+
+write.csv(dat2,'dat2phylum.csv')
+
+dat2$Sample <- factor(dat2$Sample, levels = c(
+  "E_16s_140", "E_16s_001","P_16s_004", "P_16s_001", "T_16s_009", "T_16s_001"
+  
+))
+palette <- c("#B45395", "#D8AC84", "#62E2D5" ,"#CCD988" ,"#DD96A7", "#7442E8" ,"#E75382" ,"#D59DE0" ,"#E74FC0", "#E9BE4B" ,"#B6E3C1", "#D63EE3", "#DED9D3", "#E36F46",
+           "#728F84" ,"#6CDC91" , "#8465D0" ,"#CDE54E", "#6CE856", "#C9BDDF", "#7092D3", "#E285EA" ,"#7FC9E1") 
+palette
+
+#palette <- distinctColorPalette(23)
+
+#put other phyla at top
+dat2$d <- factor(dat2$d, levels = c(
+"Other Fungi",
+" __Basal_fungi",
+" __Basidiomycota",
+" __Ascomycota"
+))
+
+### Plot graph without dots
+edes2 <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = d,pattern = Treatment))  + guides(fill = guide_legend(reverse = TRUE))  + geom_bar( stat = "identity") +  theme_classic(15) + theme(legend.position="bottom", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Fungal Clades') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+edes2 
+Fungi <- edes2 +scale_fill_manual(values=palette,labels=c("Other Fungi",  "Basal Fungi","Basidiomycota","Ascomyomycota"))  + guides(fill = guide_legend(reverse = TRUE)) +scale_x_discrete( labels = c( 'External', 'Internal', 'External', 'Internal', 'External', 'Internal'))
+Fungi
+
+
+
+##### only fungi by g
+ph4 <- PhUnmodifed
+ph4 <-prune_samples(sample_sums(ph4)>=1, ph4)
+ps<- transform_sample_counts(ph4, function(x) x / sum(x))
+ps <- tax_glom(ps, "g")
+ps2 <- transform_sample_counts(ps, function(x) x / sum(x))
+ps2 <- subset_taxa(ps2, c==" __Fungi")
+plot_bar(ps2)
+dat2 <- data.table(psmelt(ps2))
+# convert Phylum to a character vector from a factor because R
+dat2$g <- as.character(dat2$g)
+# group dataframe by Phylum, calculate median rel. abundance
+dat2[, median := median(Abundance, na.rm = TRUE), 
+     by = "g"]
+# Change name to remainder of Phylum less than 1%
+
+#onlyPhormidium <- dat2[dat2$d == ' __Archaeorhizomyces']
+#onlyPhormidium$median <- 30
+#noPhormidium <- dat2[dat2$d != ' __Archaeorhizomyces']
+#dat2 <- rbind(onlyPhormidium, noPhormidium)
+
+#onlyPhormidium <- dat2[dat2$d == ' __Nucletmycea']
+#onlyPhormidium$median <- 30
+#noPhormidium <- dat2[dat2$d != ' __Nucletmycea']
+#dat2 <- rbind(onlyPhormidium, noPhormidium)
+
+dat2[(median <= 0.005), g := "Other Fungi"]
+
+
+write.csv(dat2,'dat2phylum.csv')
+
+dat2$Sample <- factor(dat2$Sample, levels = c(
+  "E_16s_140", "E_16s_001","P_16s_004", "P_16s_001", "T_16s_009", "T_16s_001"
+  
+))
+palette <- c("#B45395", "#D8AC84", "#62E2D5" ,"#CCD988" ,"#DD96A7", "#7442E8" ,"#E75382" ,"#D59DE0" ,"#E74FC0", "#E9BE4B" ,"#B6E3C1", "#D63EE3", "#DED9D3", "#E36F46",
+             "#728F84" ,"#6CDC91" , "#8465D0" ,"#CDE54E", "#6CE856", "#C9BDDF", "#7092D3", "#E285EA" ,"#7FC9E1") 
+palette
+
+
+
+#put other phyla at top
+#dat2$d <- factor(dat2$d, levels = c(
+ # "Other Fungi",
+#  " __Basal_fungi",
+#  " __Basidiomycota",
+#  " __Ascomycota"
+#))
+
+### Plot graph without dots
+edes2 <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = g,pattern = Treatment))  + guides(fill = guide_legend(reverse = TRUE))  + geom_bar( stat = "identity") +  theme_classic(15) + theme(legend.position="bottom", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Fungal Clades') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+edes2 
+Fungi2 <- edes2 +scale_fill_manual(values=palette,labels=c("Other Fungi",  "Basal Fungi","Basidiomycota","Ascomyomycota"))  + guides(fill = guide_legend(reverse = TRUE)) +scale_x_discrete( labels = c( 'External', 'Internal', 'External', 'Internal', 'External', 'Internal'))
+Fungi2
+
+
+
+#### Final figuyre
+
+Right <- ggarrange(Metzaons, Fungi, ncol = 1, nrow = 2,labels = c("B.",  "C."))
+Right
+Figure18s <- ggarrange(cc, Right, ncol = 2, nrow = 1,labels = c("A.",  ""))
+Figure18s
+
+
+
+
+## plot graph with edited labels
+
+
+##############R18s stacked relative abundance outputs#########
+
+
+setwd("~/Desktop/ExternalMicrobiome/New18s made in R/Eventhough it says 16s is actually 18s I misslabeld but correct")
+
+
+RawOtu <- read.table("16byReplicateFinal.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+RawOtu <- RawOtu[,order(colnames(RawOtu))]
+#taxnomy strings
+taxmat <- read.table("tax.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+
+#mapping file 
+mapping <- read.table("mapingfileExternalNotDirty.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+
+#Add tree now
+filename <- "treewithotusremoved.nwk"
+#filename <- "18stree.nwk"
+rootedtree <- ape::read.tree(filename)
+#confirm rooted
+is.rooted(rootedtree)
+
+
+##Import into phyloseq
+#otu table
+#newotu
+#onlyOTU <- as.matrix(newotu)
+onlyOTU <- as.matrix(RawOtu)
+otu_sub  <- otu_table(onlyOTU, taxa_are_rows = T)
+#taxnomy strings
+t_tax <- as.matrix(taxmat)
+tax_sub = tax_table(t_tax)
+#mapping file
+metadata <- sample_data(mapping)
+
+##Create phyloseq object, the tree does not work with the !=command
+PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub)
+phc <- tax_glom(PhUnmodifed, "c")
+phcrel <- transform_sample_counts(phc, function(x) x / sum(x))
+
+dat2 <- data.table(psmelt(phcrel))
+data<- dat2%>%filter(Animal!="Mat")
+data<- data%>%filter(c==" __Fungi")
+
+###final alpha stats verison
+m <- lmer(Abundance ~ Animal*Treatment*Mat_Type+StreamName+(1|Matnumber/Animal), data)
+anova(m, ddf="Kenward-Roger")
+emmeans(m,pairwise~Treatment)
+emmeans(m,pairwise~Treatment|Animal)
+emmeans(m,pairwise~Animal)
+
+
+##############R16s stacked relative abundance outputs FINAL STASTCITS FOR THIS#########
+
+
+setwd("~/Desktop/ExternalMicrobiome/New16s made in R")
+
+
+##Import into R
+#otu table
+RawOtu <- read.table("16byreplicatewithexternaldeletedirynoheader.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+RawOtu <- RawOtu[,order(colnames(RawOtu))]
+#taxnomy strings
+taxmat <- read.table("tax.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+#mapping file 
+mapping <- read.table("mapingfileExternalNotDirty.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+##Import into phyloseq
+#otu table
+onlyOTU <- as.matrix(RawOtu)
+otu_sub  <- otu_table(onlyOTU, taxa_are_rows = T)
+#taxnomy strings
+t_tax <- as.matrix(taxmat)
+tax_sub = tax_table(t_tax)
+#mapping file
+metadata <- sample_data(mapping)
+
+##Create phyloseq object
+PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub)
+PhUnmodifed <-prune_samples(sample_sums(PhUnmodifed)>=10, PhUnmodifed)
+#Remove non bacteral reads
+PhOnlyBac <- subset_taxa(PhUnmodifed, Domain=="Bacteria")
+PhOnlyBac <- tax_glom(PhOnlyBac, "Phylum")
+RELPhOnlyClean10 <- transform_sample_counts(PhOnlyBac, function(x) x / sum(x))
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_064")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_111")
+RELPhOnlyClean10 <- subset_samples(RELPhOnlyClean10, SampleID!="E_16s_118")
+dat2 <- data.table(psmelt(RELPhOnlyClean10))
+
+#write.csv(dat2,'16sstackedrelpyhluwwwmcyano.csv')
+
+#X16sstackedrelpyhlumcyano <- read_csv("16sstackedrelpyhlumcyano.csv")
+#m <- lmer(Abundance ~ Animal*Treatment*Mat_Type+StreamName+(1|Matnumber/Animal), data=X16sstackedrelpyhlumcyano)
+#anova(m, ddf="Kenward-Roger")
+#emmeans(m,pairwise~Treatment)
+#emmeans(m,pairwise~Treatment|Animal)
+#emmeans(m,pairwise~Animal)
+
+
+
+###final  stats verison
+dat2 <- data.table(psmelt(RELPhOnlyClean10))
+m <- lmer(Abundance ~ Animal*Treatment*Mat_Type+StreamName+(1|Matnumber/Animal), data=dat2%>%filter(Phylum=="Cyanobacteria"))
+m <- lmer(Abundance ~ Animal*Mat_Type+StreamName+(1|Matnumber/Animal), data=dat2%>%filter(Phylum=="Cyanobacteria"))
+anova(m, ddf="Kenward-Roger")
+emmeans(m,pairwise~Treatment)
+emmeans(m,pairwise~Treatment|Animal)
+emmeans(m,pairwise~Animal)
+
+
+###final  stats verison
+dat2 <- data.table(psmelt(RELPhOnlyClean10))
+m <- lmer(Abundance ~ Animal*Treatment*Mat_Type+StreamName+(1|Matnumber/Animal), data=dat2%>%filter(Genus=="Larkinella"))
+anova(m, ddf="Kenward-Roger")
+emmeans(m,pairwise~Treatment)
+emmeans(m,pairwise~Treatment|Animal)
+emmeans(m,pairwise~Animal)
+
+#dispersion stats
+import <- read.table("betadisperwithmetadata.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+m <- lmer(Distance_to_centroid ~ Animal*Treatment*Mat_Type+Stream+(1|Mat_Replicate/Animal), data=import)
+anova(m, ddf="Kenward-Roger")
+emmeans(m,pairwise~Treatment)
+emmeans(m,pairwise~Treatment|Animal)
+emmeans(m,pairwise~Animal)
+
+
+write.csv(dat2,'deeleltethispercent.csv')
+
+#% of genus
+tax glom to genus abouve
+data=dat2%>%filter(Phylum=="Actinobacteriota")
+write.csv(data,'deletepercenttyco.csv')
+#PhOnlyBac = subset_samples(PhOnlyBac, Animal!="Mat" )
+
+
+
+
+#####R16 betadiveity with mats########
+setwd("~/Desktop/ExternalMicrobiome/New16s made in R")
+
+
+##Import into R
+#otu table
+RawOtu <- read.table("16byreplicatewithexternaldeletedirynoheaderwithmats.csv",sep=",", row.names=1,header=T, check.names=F,blank.lines.skip = FALSE)
+RawOtu <- RawOtu[,order(colnames(RawOtu))]
+#taxnomy strings
+taxmat <- read.table("tax.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+#mapping file 
+mapping <- read.table("mapingfileExternalNotDirty.csv",sep=",", header=T,  row.names=1, check.names=F,blank.lines.skip = FALSE)
+
+##Import into phyloseq
+#otu table
+onlyOTU <- as.matrix(RawOtu)
+otu_sub  <- otu_table(onlyOTU, taxa_are_rows = T)
+#taxnomy strings
+t_tax <- as.matrix(taxmat)
+tax_sub = tax_table(t_tax)
+#mapping file
+metadata <- sample_data(mapping)
+
+##Create phyloseq object
+PhUnmodifed<- phyloseq(otu_sub,metadata,tax_sub)
+PhUnmodifed <-prune_samples(sample_sums(PhUnmodifed)>=10, PhUnmodifed)
+#Remove non bacteral reads
+PhOnlyBac <- subset_taxa(PhUnmodifed, Domain=="Bacteria")
+
+RELPhOnlyClean10 <- transform_sample_counts(PhOnlyBac, function(x) x / sum(x))
+sample_data(RELPhOnlyClean10)$Microbiome_Type <- factor(sample_data(RELPhOnlyClean10)$Microbiome_Type,levels = c("Matmat", "Eudorylaimusexternal","Eudorylaimusclean", 
+                                                                                                                  "Plectusexternal", "Plectusclean",  "Tardigradeexternal","Tardigradeclean"))
+#allGroupsColors <- c( "#E94032","#f49f98", "#414c7d", "#c0ccfc",  "#AC3DB4" ,"#d59ed9")
+
+
+allGroupsColors <- c("#7CFC00", "#FF0000","#FFBB00", "#4800FF", "#00FDFF",  "#74007D" ,"#E500FF")
+allGroupsColors <- c("#7CFC00", "#FF0000","#FFBB00", "#4800FF", "#00FDFF",  "#74007D" ,"#E500FF")
+wunifrac_dist = phyloseq::distance(RELPhOnlyClean10, method="bray", weighted=F)
+#wunifrac_dist = phyloseq::distance(RELPhOnlyClean10, method="jaccard", binary = TRUE)
+ordination = ordinate(RELPhOnlyClean10, method="DCA", distance=wunifrac_dist)
+plotbeta <- plot_ordination(RELPhOnlyClean10, ordination, color="Microbiome_Type") + theme_classic(30) + theme(axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+plotbeta <- plotbeta + xlab("PCoA 1 [12.4%]") + ylab("PCoA 2 [9.9%]")+ theme(legend.position = "right")+ geom_point( size = 3)+ scale_color_manual(name= "", values = allGroupsColors,labels=c("Mat", "Eudorylaimus External","Eudorylaimus Internal",  "Plectus External",   "Plectus Internal",  "Tardigrade External","Tardigrade Internal"))
+plotbeta
+plotbeta <- plotbeta + stat_ellipse( level = 0.008, type="euclid") +coord_fixed(ratio = 1)
+plotbeta
+my_legend <- get_legend(plotbeta)
+plotbetaleg<- as_ggplot(my_legend)
+plotbetaleg
+plotbeta <- plotbeta + theme(legend.position = "none")
+plotbeta
+
+
+
+
+
+## same thing but for intenral
+PhOnlyClean10
+
+RELPhOnlyClean10 <- transform_sample_counts(PhOnlyClean10, function(x) x / sum(x))
+sample_data(RELPhOnlyClean10)$Animal <- factor(sample_data(RELPhOnlyClean10)$Animal,levels = c("Mat", "Eudorylaimus",
+                                                                                                                 "Plectus", "Tardigrade"))
+#allGroupsColors <- c( "#E94032","#f49f98", "#414c7d", "#c0ccfc",  "#AC3DB4" ,"#d59ed9")
+
+allGroupsColors <- c("#7CFC00", "#FFBB00", "#00FDFF",  "#E500FF")
+wunifrac_dist = phyloseq::distance(RELPhOnlyClean10, method="bray", weighted=F)
+#wunifrac_dist = phyloseq::distance(RELPhOnlyClean10, method="jaccard", binary = TRUE)
+ordination = ordinate(RELPhOnlyClean10, method="PCoA", distance=wunifrac_dist)
+plotbeta <- plot_ordination(RELPhOnlyClean10, ordination, color="Animal") + theme_classic(15) + theme(axis.text.x = element_text(color="black"), axis.text.y = element_text(color="black") )
+plotbeta <- plotbeta + theme(legend.position = "bottom")+ geom_point( size = 3)+ scale_color_manual(name= "", values = allGroupsColors,labels=c("Mat", "Eudorylaimus", "Plectus", "Tardigrade"))
+plotbeta
+plotbeta <- plotbeta + stat_ellipse( level = 0.008, type="euclid") +coord_fixed(ratio = 1)
+plotbeta
+my_legend <- get_legend(plotbeta)
+plotbetaleg<- as_ggplot(my_legend)
+plotbetaleg
+plotbeta <- plotbeta + theme(legend.position = "none")
+plotbeta
+
+ggsave(test,plot = plotbeta,device=svg)
+###
