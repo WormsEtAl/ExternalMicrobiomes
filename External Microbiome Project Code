@@ -1,7 +1,11 @@
+
+
+
+
 #Selected Code for: External and internal microbiomes of Antarctic nematodes are distinct, but more similar to each other than the surrounding environment
 
 #Line 15-106: 16s and 18s metabarcoding in Qiime2 (to create ASV tables from raw reads)
-#Line 104-136 Load R libraries
+#Line 107-136 Load R libraries
 #Line 138-230 Community processing (to import ASV table into Phyloseq and manipulate)
 #Line 265-297 Generate Alpha Diversity Metrics
 #Line 298-370--329 Statistics
@@ -301,11 +305,11 @@ AlphaForPhilNoUncultWithMetadata <- read.csv("HillNumbersExternalInternal18sWith
 alphadata <- AlphaForPhilNoUncultWithMetadata
 
 #Replace "faith" with "simp", "shan","richness" as needed" 
-m <- lmer(faith ~ Animal*Treatment*Mat_Type+Stream+(1|Mat_Replicate/Animal), data=alphadata)
+m <- lmer(faith ~ Animal*MicrobiomeType*Mat_Type+Stream+(1|Mat_Replicate/Animal), data=alphadata)
 plot(simulateResiduals(m))
 anova(m, ddf="Kenward-Roger")
-emmeans(m,pairwise~Treatment)
-emmeans(m,pairwise~Treatment|Animal)
+emmeans(m,pairwise~MicrobiomeType)
+emmeans(m,pairwise~MicrobiomeType|Animal)
 emmeans(m,pairwise~Animal)
 
 AlphaForPhilNoUncultWithMetadata <- read.csv("FinalAlpha16sWithMats.csv")
@@ -320,22 +324,22 @@ emmeans(m,pairwise~MatvsAnimals)
 ###final  stats verison
 RELPhOnlyClean10 <- tax_glom(Your18sor16sTable, "Phylum")
 dat2 <- data.table(psmelt(RELPhOnlyClean10))
-m <- lmer(Abundance ~ Animal*Treatment*Mat_Type+StreamName+(1|Matnumber/Animal), data=dat2%>%filter(Phylum=="Cyanobacteria"))
+m <- lmer(Abundance ~ Animal*MicrobiomeType*Mat_Type+StreamName+(1|Matnumber/Animal), data=dat2%>%filter(Phylum=="Cyanobacteria"))
 plot(simulateResiduals(m))
 anova(m, ddf="Kenward-Roger")
-emmeans(m,pairwise~Treatment)
-emmeans(m,pairwise~Treatment|Animal)
+emmeans(m,pairwise~MicrobiomeType)
+emmeans(m,pairwise~MicrobiomeType|Animal)
 emmeans(m,pairwise~Animal)
 
 
 ###final  stats verison
 RELPhOnlyClean10 <- tax_glom(Your18sor16sTable, "Genus")
 dat2 <- data.table(psmelt(RELPhOnlyClean10))
-m <- lmer(Abundance ~ Animal*Treatment*Mat_Type+StreamName+(1|Matnumber/Animal), data=dat2%>%filter(Genus=="Larkinella"))
+m <- lmer(Abundance ~ Animal*MicrobiomeType*Mat_Type+StreamName+(1|Matnumber/Animal), data=dat2%>%filter(Genus=="Larkinella"))
 plot(simulateResiduals(m))
 anova(m, ddf="Kenward-Roger")
-emmeans(m,pairwise~Treatment)
-emmeans(m,pairwise~Treatment|Animal)
+emmeans(m,pairwise~MicrobiomeType)
+emmeans(m,pairwise~MicrobiomeType|Animal)
 emmeans(m,pairwise~Animal)
 
 
@@ -347,19 +351,19 @@ emmeans(m,pairwise~Animal)
 sampledf <- data.frame(sample_data(YourPhlyoseqobject))
 wunifrac_dist = phyloseq::distance(YourPhlyoseqobject, method="bray", weighted=F)
 ordination = ordinate(RELPhOnlyClean10, method="NMDS", distance=wunifrac_dist)
-adonis( wunifrac_dist ~ Animal * Treatment * Mat_Type + StreamName, data = sampledf, permutations = 9999)
+adonis( wunifrac_dist ~ Animal * MicrobiomeType * Mat_Type + StreamName, data = sampledf, permutations = 9999)
 
 
-### split by treatment
+### split by MicrobiomeType
 #only external
-RELPhOnlyClean10External <- subset_samples(YourPhlyoseqobject, Treatment=="External")
+RELPhOnlyClean10External <- subset_samples(YourPhlyoseqobject, MicrobiomeType=="External")
 wunifrac_dist = phyloseq::distance(RELPhOnlyClean10External, method="bray", weighted=F)
 ordination = ordinate(RELPhOnlyClean10External, method="NMDS", distance=wunifrac_dist)
 sampledf <- data.frame(sample_data(RELPhOnlyClean10External))
 adonis( wunifrac_dist ~ Animal * Mat_Type + StreamName, data = sampledf, permutations = 9999)
 
 #only internal
-RELPhOnlyClean10Internal <- subset_samples(YourPhlyoseqobject, Treatment=="Internal")
+RELPhOnlyClean10Internal <- subset_samples(YourPhlyoseqobject, MicrobiomeType=="Internal")
 wunifrac_dist = phyloseq::distance(RELPhOnlyClean10Internal, method="bray", weighted=F)
 ordination = ordinate(RELPhOnlyClean10Internal, method="NMDS", distance=wunifrac_dist)
 sampledf <- data.frame(sample_data(RELPhOnlyClean10Internal))
@@ -669,7 +673,7 @@ dat2$c <- factor(dat2$c, levels = c(
 
 
 ### Plot graph without dots
-edes2 <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = c,pattern = Treatment))  + guides(fill = guide_legend(reverse = TRUE))+ guides(fill = guide_legend(reverse = TRUE))  + geom_bar( stat = "identity") +  theme_classic(15) +
+edes2 <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = c,pattern = MicrobiomeType))  + guides(fill = guide_legend(reverse = TRUE))+ guides(fill = guide_legend(reverse = TRUE))  + geom_bar( stat = "identity") +  theme_classic(15) +
   scale_fill_manual(values=palette,labels=c( "Other Eukaryotes", "Chloroplastida","Fungi", "Rhizaria","Stramenopiles", "Metazoa"))  + theme(legend.position="bottom", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
 edes2 
 cc <- edes2  +scale_x_discrete( labels = c( 'External', 'Internal', 'External', 'Internal', 'External', 'Internal'))
@@ -705,7 +709,7 @@ palette
 
 
 ### Plot graph without dots
-edes2 <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = d,pattern = Treatment))  + guides(fill = guide_legend(reverse = TRUE))  + geom_bar( stat = "identity") +  theme_classic(15) + theme(legend.position="bottom", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Metazoan Phyla') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+edes2 <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = d,pattern = MicrobiomeType))  + guides(fill = guide_legend(reverse = TRUE))  + geom_bar( stat = "identity") +  theme_classic(15) + theme(legend.position="bottom", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Metazoan Phyla') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
 edes2 
 Metzaons <- edes2 +scale_fill_manual(values=palette,labels=c( "Nematoda","Rotifera","Tardigrada"))  + guides(fill = guide_legend(reverse = TRUE)) +scale_x_discrete( labels = c( 'External', 'Internal', 'External', 'Internal', 'External', 'Internal'))
 Metzaons
@@ -751,7 +755,7 @@ dat2$d <- factor(dat2$d, levels = c(
 ))
 
 ### Plot graph without dots
-edes2 <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = d,pattern = Treatment))  + guides(fill = guide_legend(reverse = TRUE))  + geom_bar( stat = "identity") +  theme_classic(15) + theme(legend.position="bottom", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Fungal Clades') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
+edes2 <- ggplot(dat2, aes(x = Sample, y = Abundance, fill = d,pattern = MicrobiomeType))  + guides(fill = guide_legend(reverse = TRUE))  + geom_bar( stat = "identity") +  theme_classic(15) + theme(legend.position="bottom", axis.title.x=element_blank(),axis.text.x = element_text(color="black", margin = margin(t = 2)),axis.text.y = element_text(color="black")  )+ ylab("Relative Abundance") + labs(fill='Fungal Clades') +  scale_y_continuous(expand = c(0,0))+ theme(legend.text = element_text(size=10), legend.title = element_text(size=15), axis.text.x = element_text(angle = 0, vjust = 0.5)) 
 edes2 
 Fungi <- edes2 +scale_fill_manual(values=palette,labels=c("Other Fungi",  "Basal Fungi","Basidiomycota","Ascomyomycota"))  + guides(fill = guide_legend(reverse = TRUE)) +scale_x_discrete( labels = c( 'External', 'Internal', 'External', 'Internal', 'External', 'Internal'))
 Fungi
